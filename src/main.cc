@@ -75,6 +75,25 @@ int main( void ) {
                indices.data(), GL_STATIC_DRAW);
 
   //////////
+  ///// 2nd model
+
+  std::vector<glm::vec3> vertices_2nd;
+  std::vector<unsigned int> indices_2nd;
+
+  GLuint program_id_2;
+  LoadShaders("../shader/vertex2.glsl",
+              "../shader/fragment2.glsl",
+              program_id_2);
+  GLint mvp_id = glGetUniformLocation(program_id_2, "mvp");
+
+  GLuint vao2;
+  glGenVertexArrays(1, &vao2);
+  glBindVertexArray(vao2);
+
+  GLuint vbo2[2];
+  glGenBuffers(2, vbo2);
+
+  //////////
   // Additional OpenGL setting
   glfwPollEvents();
   glfwSetCursorPos(context.window(), 1024/2, 768/2);
@@ -83,6 +102,7 @@ int main( void ) {
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS);
 
+  unsigned int vtx_index = 0;
   do {
     ////////////////
     // General updating
@@ -104,6 +124,39 @@ int main( void ) {
 
     glBindVertexArray(vao);
     glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+
+    /////////
+    glUseProgram(program_id_2);
+    glUniformMatrix4fv(mvp_id, 1, GL_FALSE, &MVP[0][0]);
+    glBindVertexArray(vao2);
+    glm::mat4 viewMat_inv = glm::inverse(viewMat);
+    glm::vec4 o = viewMat_inv * glm::vec4(0, 0, -0.1, 1);
+    glm::vec4 x = viewMat_inv * glm::vec4(0.1, 0, -0.1, 1);
+    glm::vec4 y = viewMat_inv * glm::vec4(0, 0.1, -0.1, 1);
+    glm::vec4 z = viewMat_inv * glm::vec4(0, 0, -0.2, 1);
+    vertices_2nd.push_back(glm::vec3(o.x, o.y, o.z));
+    vertices_2nd.push_back(glm::vec3(x.x, x.y, x.z));
+    vertices_2nd.push_back(glm::vec3(y.x, y.y, y.z));
+    vertices_2nd.push_back(glm::vec3(z.x, z.y, z.z));
+    indices_2nd.push_back(vtx_index);
+    indices_2nd.push_back(vtx_index + 1);
+    indices_2nd.push_back(vtx_index);
+    indices_2nd.push_back(vtx_index + 2);
+    indices_2nd.push_back(vtx_index);
+    indices_2nd.push_back(vtx_index + 3);
+    vtx_index += 4;
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo2[0]);
+    glBufferData(GL_ARRAY_BUFFER,
+                 vertices_2nd.size() * sizeof(vertices_2nd[0]),
+                 vertices_2nd.data(), GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void *)0);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo2[1]);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+                 indices_2nd.size() * sizeof(indices_2nd[0]),
+                 indices_2nd.data(), GL_STATIC_DRAW);
+    glDrawElements(GL_LINES, indices_2nd.size(), GL_UNSIGNED_INT, 0);
 
     // Swap buffers
     glfwSwapBuffers(context.window());
