@@ -14,6 +14,8 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 SET(OpenGL_Template_LIBRARIES "")
 SET(OpenGL_Template_SOURCES
         src/main.cc
+        src/GLObjects/plane.cc
+        src/GLObjects/camera.cc
         src/utils/context.cc
         src/utils/control.cc
         src/utils/model.cc
