@@ -33,12 +33,14 @@ int main( void ) {
   std::vector<unsigned int> indices;
   GLuint texture, program_id;
   GLint result;
-  result = LoadModel("/Users/Neo/Desktop/f16.obj", vertices, uvs, normals, indices);
-  result = LoadTexture("/Users/Neo/Desktop/F16s.bmp", texture);
-  result = LoadShaders("vertex.glsl", "fragment.glsl", program_id);
+  result = LoadModel("../obj/f16.obj", vertices, uvs, normals, indices);
+  result = LoadTexture("../obj/f16.bmp", texture);
+  result = LoadShaders("../shader/vertex.glsl",
+                       "../shader/fragment.glsl",
+                       program_id);
 
-  GLint matrix_id = glGetUniformLocation(program_id, "mvp");
-  GLint view_id = glGetUniformLocation(program_id, "viewMat");
+  GLint matrix_id  = glGetUniformLocation(program_id, "mvp");
+  GLint view_id    = glGetUniformLocation(program_id, "viewMat");
   GLint texture_id = glGetUniformLocation(program_id, "textureSampler");
 
   ////////////
