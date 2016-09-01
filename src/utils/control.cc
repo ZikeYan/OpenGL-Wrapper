@@ -15,7 +15,6 @@ Control::Control(GLFWwindow *window) {
   window_ = window;
 
   position_ = glm::vec3( 0, 0, 5 );
-
   horizontal_angle_ = 3.14f;
   vertical_angle_ = 0.0f;
   fov_ = 45.0f;

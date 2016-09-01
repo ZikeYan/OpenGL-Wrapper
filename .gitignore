@@ -2,7 +2,7 @@
 *.slo
 *.lo
 *.o
-*.obj
+# *.obj
 
 # Precompiled Headers
 *.gch
@@ -30,3 +30,4 @@
 
 # CLion
 .idea/*
+.DS_Store
