@@ -6,6 +6,7 @@ PROJECT(OpenGL_Template)
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -Wall -g -ggdb")
 SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -Wall")
+
 #----------
 
 #----------
@@ -25,6 +26,7 @@ SET(OpenGL_Template_SOURCES
 
 #----------
 # Package configurations
+
 FIND_PACKAGE(PkgConfig)
 ## Find packages
 LIST(APPEND
@@ -32,21 +34,32 @@ LIST(APPEND
         ${PROJECT_SOURCE_DIR}/cmake_modules)
 FIND_PACKAGE(GLFW3 REQUIRED)
 FIND_PACKAGE(GLEW REQUIRED)
+FIND_PACKAGE(glm REQUIRED)
 FIND_PACKAGE(OpenGL REQUIRED)
+
+# Magic for OpenCV with CUDA support
+SET(CUDA_USE_STATIC_CUDA_RUNTIME OFF)
 FIND_PACKAGE(OpenCV REQUIRED)
 
 ## Include
 INCLUDE_DIRECTORIES(
         ${PROJECT_SOURCE_DIR}/include
         ${GLFW3_INCLUDE_DIRS}
-        ${GLEW_INCLUDE_DIRS})
+        ${GLEW_INCLUDE_DIR}
+        ${glm_INCLUDE_DIRS})
+
 ## Lib
 LIST(APPEND
         OpenGL_Template_LIBRARIES
         ${OPENGL_LIBRARY}
-        ${GLFW3_LIBRARIES}
         ${GLEW_LIBRARY})
-#----------
+if (APPLE)
+    LIST(APPEND OpenGL_Template_LIBRARIES
+            ${GLFW3_LIBRARIES})
+elseif (UNIX)
+    LIST(APPEND OpenGL_Template_LIBRARIES
+            ${GLFW3_STATIC_LIBRARIES})
+endif()
 
 #---------
 # Compile and Link
