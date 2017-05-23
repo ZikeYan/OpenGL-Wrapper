@@ -2,7 +2,7 @@
 // Created by Neo on 16/8/2.
 //
 
-#include "GLObjects/camera.h"
+#include "gl_objects/camera.h"
 
 #include "utils/shader.h"
 

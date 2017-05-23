@@ -2,7 +2,7 @@
 // Created by Neo on 16/8/2.
 //
 
-#include "GLObjects/plane.h"
+#include "gl_objects/plane.h"
 
 #include "utils/model.h"
 #include "utils/shader.h"

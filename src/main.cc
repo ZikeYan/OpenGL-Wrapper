@@ -18,8 +18,8 @@
 #include "utils/context.h"
 #include "utils/control.h"
 
-#include "GLObjects/plane.h"
-#include "GLObjects/camera.h"
+#include "gl_objects/plane.h"
+#include "gl_objects/camera.h"
 
 int main( void ) {
   // Context and control init

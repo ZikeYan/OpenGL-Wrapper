@@ -5,7 +5,7 @@
 #ifndef OPENGL_TEMPLATE_F16_H
 #define OPENGL_TEMPLATE_F16_H
 
-#include "GLObject.h"
+#include "gl_object.h"
 
 #include <string>
 #include <vector>

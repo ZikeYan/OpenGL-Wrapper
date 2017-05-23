@@ -1,5 +1,5 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
-PROJECT(OpenGL_Template)
+PROJECT(opengl-snippet)
 
 #----------
 # C++ version setting
@@ -11,11 +11,11 @@ SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -Wall")
 #----------
 # Project variable configurations
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
-SET(OpenGL_Template_LIBRARIES "")
-SET(OpenGL_Template_SOURCES
+SET(OPENGL_SNIPPET_LIBRARIES "")
+SET(OPENGL_SNIPPET_SOURCES
         src/main.cc
-        src/GLObjects/plane.cc
-        src/GLObjects/camera.cc
+        src/gl_objects/plane.cc
+        src/gl_objects/camera.cc
         src/utils/context.cc
         src/utils/control.cc
         src/utils/model.cc
@@ -48,21 +48,21 @@ INCLUDE_DIRECTORIES(
 
 ## Lib
 LIST(APPEND
-        OpenGL_Template_LIBRARIES
+        OPENGL_SNIPPET_LIBRARIES
         ${OPENGL_LIBRARY}
         ${GLEW_LIBRARY})
 if (APPLE)
-    LIST(APPEND OpenGL_Template_LIBRARIES
+    LIST(APPEND OPENGL_SNIPPET_LIBRARIES
             ${GLFW3_LIBRARIES})
 elseif (UNIX)
-    LIST(APPEND OpenGL_Template_LIBRARIES
+    LIST(APPEND OPENGL_SNIPPET_LIBRARIES
             ${GLFW3_STATIC_LIBRARIES})
 endif()
 
 #---------
 # Compile and Link
-ADD_EXECUTABLE(OpenGL_Template ${OpenGL_Template_SOURCES})
-TARGET_LINK_LIBRARIES(OpenGL_Template
-        ${OpenGL_Template_LIBRARIES}
+ADD_EXECUTABLE(opengl-snippet ${OPENGL_SNIPPET_SOURCES})
+TARGET_LINK_LIBRARIES(opengl-snippet
+        ${OPENGL_SNIPPET_LIBRARIES}
         ${OpenCV_LIBS})
 #---------
