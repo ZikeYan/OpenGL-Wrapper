@@ -22,7 +22,7 @@ void Plane::Init() {
   LoadTexture(texture_path_, texture_id_);
   LoadShaders(vertex_shader_path_, fragment_shader_path_, program_id_);
 
-  v_id_               = glGetUniformLocation(program_id_, "viewMat");
+  v_id_               = glGetUniformLocation(program_id_, "c_T_w");
   mvp_id_             = glGetUniformLocation(program_id_, "mvp");
   texture_sampler_id_ = glGetUniformLocation(program_id_, "textureSampler");
 

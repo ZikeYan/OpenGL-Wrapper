@@ -1,0 +1,3 @@
+/home/wei/code/OpenGL_Template/build/CMakeFiles/edit_cache.dir
+/home/wei/code/OpenGL_Template/build/CMakeFiles/rebuild_cache.dir
+/home/wei/code/OpenGL_Template/build/CMakeFiles/OpenGL_Template.dir

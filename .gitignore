@@ -30,4 +30,5 @@
 
 # CLion
 .idea/*
+bin/
 .DS_Store
