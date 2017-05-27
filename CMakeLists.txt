@@ -14,8 +14,10 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 SET(OPENGL_SNIPPET_LIBRARIES "")
 SET(OPENGL_SNIPPET_SOURCES
         src/main.cc
-        src/gl_objects/plane.cc
-        src/gl_objects/camera.cc
+        src/gl_objects/gl_object.cc
+        src/gl_objects/mesh_object.cc
+        # src/gl_objects/plane.cc
+        # src/gl_objects/camera.cc
         src/utils/context.cc
         src/utils/control.cc
         src/utils/model.cc

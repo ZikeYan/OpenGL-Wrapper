@@ -20,6 +20,8 @@ Control::Control(GLFWwindow *window) {
   fov_ = 45.0f;
   move_speed_ = 3.0f;
   rotate_speed_ = 0.005f;
+
+  projection_mat_ = glm::perspective(fov_, 4.0f / 3.0f, 0.1f, 100.0f);
 }
 
 glm::mat4 Control::view_mat() {
@@ -81,7 +83,6 @@ void Control::UpdateCameraPose(){
     position_.y -= move_speed_ * delta_time;
   }
 
-  projection_mat_ = glm::perspective(fov_, 4.0f / 3.0f, 0.1f, 100.0f);
   // Camera matrix
   view_mat_       = glm::lookAt(
       position_,

@@ -8,7 +8,11 @@
 #include <string>
 #include <GL/glew.h>
 
-GLint LoadTexture(std::string texture_path,
+GLint SetTexture(std::string texture_path,
                   GLuint &texture_id);
 
+void SetTexture(std::string texture_path,
+                 unsigned char* &data,
+                 int &width,
+                 int &height);
 #endif //RAYTRACING_TEXTURE_H

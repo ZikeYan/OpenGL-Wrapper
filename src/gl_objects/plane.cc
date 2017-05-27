@@ -19,7 +19,7 @@ Plane::Plane(std::string vertex_shader_path,
 
 void Plane::Init() {
   LoadModel(model_path_, vertices_, uvs_, normals_, indices_);
-  LoadTexture(texture_path_, texture_id_);
+  SetTexture(texture_path_, texture_id_);
   LoadShaders(vertex_shader_path_, fragment_shader_path_, program_id_);
 
   v_id_               = glGetUniformLocation(program_id_, "c_T_w");
@@ -31,14 +31,7 @@ void Plane::Init() {
 
   glGenBuffers(4, vbo_);
   glEnableVertexAttribArray(0);
-  glBindBuffer(GL_ARRAY_BUFFER, vbo_[0]);
-  glBufferData(GL_ARRAY_BUFFER,
-               vertices_.size() * sizeof(vertices_[0]),
-               vertices_.data(),
-               GL_STATIC_DRAW);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
-  glEnableVertexAttribArray(1);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo_[0]);  glEnableVertexAttribArray(1);
   glBindBuffer(GL_ARRAY_BUFFER, vbo_[1]);
   glBufferData(GL_ARRAY_BUFFER,
                uvs_.size() * sizeof(uvs_[0]),
@@ -59,6 +52,13 @@ void Plane::Init() {
                indices_.size() * sizeof(indices_[0]),
                indices_.data(),
                GL_STATIC_DRAW);
+
+  glBufferData(GL_ARRAY_BUFFER,
+               vertices_.size() * sizeof(vertices_[0]),
+               vertices_.data(),
+               GL_STATIC_DRAW);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
 }
 
 void Plane::Render() {
@@ -66,8 +66,8 @@ void Plane::Render() {
 
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE0, texture_id_);
-  glUniform1i(texture_sampler_id_, 0);
 
+  glUniform1i(texture_sampler_id_, 0);
   glUniformMatrix4fv(mvp_id_, 1, GL_FALSE, mvp_);
   glUniformMatrix4fv(v_id_,   1, GL_FALSE, v_);
 

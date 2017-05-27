@@ -95,6 +95,7 @@ GLint LoadShaders(std::string vertex_shader_path,
   glDeleteShader(vertex_shader_id);
   glDeleteShader(fragment_shader_id);
 
+  std::cout << "Success." << std::endl;
   return 0;
 }
 
