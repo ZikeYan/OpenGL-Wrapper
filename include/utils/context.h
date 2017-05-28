@@ -14,11 +14,10 @@
 
 class Context {
 public:
-  Context(std::string window_name);
+  Context(std::string window_name, int width, int height);
   GLFWwindow *window() const;
 
 private:
-  int Init(std::string window_name);
   GLFWwindow *window_;
 };
 

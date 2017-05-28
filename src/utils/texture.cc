@@ -7,10 +7,10 @@
 #include <stdio.h>
 #include <iostream>
 
-void SetTexture(std::string texture_path,
-                 unsigned char* &data,
-                 int &width,
-                 int &height) {
+void LoadTexture(std::string texture_path,
+                unsigned char* &data,
+                int &width,
+                int &height) {
   const int kBMPHeaderSize = 54;
   unsigned char header[kBMPHeaderSize];
   unsigned int data_pos;
@@ -46,7 +46,7 @@ void SetTexture(std::string texture_path,
   fclose(file);
 }
 
-GLint SetTexture(std::string texture_path,
+GLint LoadTexture(std::string texture_path,
                   GLuint &texture_id){
   const int kBMPHeaderSize = 54;
   unsigned char header[kBMPHeaderSize];

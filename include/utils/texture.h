@@ -8,10 +8,10 @@
 #include <string>
 #include <GL/glew.h>
 
-GLint SetTexture(std::string texture_path,
+GLint LoadTexture(std::string texture_path,
                   GLuint &texture_id);
 
-void SetTexture(std::string texture_path,
+void LoadTexture(std::string texture_path,
                  unsigned char* &data,
                  int &width,
                  int &height);

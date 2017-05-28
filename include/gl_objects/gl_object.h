@@ -14,55 +14,74 @@ enum UniformType {
   kMatrix4f
 };
 
-/// I classify OpenGL objects into two kinds:
-/// type 1. MeshObject,  for traditional mesh rendering
-/// type 2. FrameObject, only for efficient image displaying
-/// Actually, type 2 is a specific instance of type 1;
-/// as it is widely used, I make it special
+enum MeshType {
+  kVertex,
+  kVertexFace,
+  kVertexNormalFace,
+  kVertexNormalUVFace,
+  kImage // Special case
+};
 
 class GLObject {
 public:
-  GLObject();
+  GLObject(MeshType mesh_type);
   ~GLObject();
 
-  /// Part initialization
-  /// Shared: do not override
+  /// Part 1: initialization
   void InitShader(std::string vert_shader_path,
                   std::string frag_shader_path,
                   std::vector<std::pair<UniformType, std::string> >& uniforms);
+  void InitVAO(std::vector<int>& count_of_objects);
+  void InitTexture(int width, int height);
 
-  virtual void InitVAO(std::vector<int>& count_of_objects) = 0;
-  virtual void InitTexture(int width, int height) = 0;
+  /// Part 2: data passing
+  void SetUniforms(std::vector<void*> uniform_values);
 
-  /// Part argument passing
-  /// Shared: do not override
-  void SetUniforms(std::vector<void*> uniform_vals);
+  // kImage
+  void SetMesh();
+  // kVertex
+  void SetMesh(float* vertices);
+  // kVertexFace
+  void SetMesh(float* vertices,
+               unsigned int* faces);
+  // kVertexNormalFace
+  void SetMesh(float* vertices, float* normals,
+               unsigned int* faces);
+  // kVertexNormalUVFace
+  void SetMesh(float* vertices, float* normals, float* uvs,
+               unsigned int* faces);
+
   void SetTexture(unsigned char* data, int width, int height);
 
-  /// Part rendering
-  virtual void Render() = 0;
+  /// Part 3: rendering
+  void Render();
 
 protected:
-  // These are setted by inherited classes
-  bool is_vao_inited_ = false;
+  MeshType mesh_type_;
+
+  bool is_shader_inited_  = false;
+  bool is_vao_inited_     = false;
   bool is_texture_inited_ = false;
 
-  // This is setted by the base class
-  bool is_shader_inited_ = false;
+  /// Shaders and uniforms
+  GLuint  program_;
+  int     uniform_count_;
+  // Correspondence is required
+  // TODO: use unordered_map to manage
+  // uniform_name -> (type, GLint) and
+  // uniform_name -> (value)
+  std::vector<std::pair<UniformType, GLint> > uniforms_;
+  std::vector<void*>                          uniform_values_;
 
-  GLuint vao_;
-  GLuint program_;
-
+  /// Mesh data buffers
+  GLuint  vao_;
   int     vbo_count_;
-  GLuint* vbos_; // glGenBuffer uses array
+  // glGenBuffer uses raw array, otherwise I prefer use vector
+  GLuint* vbos_;
   std::vector<int> count_of_objects_;
 
-  /// At current support 1 texture only
+  /// Texture, only 1 texture is supported
   GLuint  texture_;
-
-  int     uniform_count_;
-  std::vector<std::pair<UniformType, GLint> > uniforms_;
-  std::vector<void*> uniform_values_;
 };
 
 

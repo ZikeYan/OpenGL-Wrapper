@@ -20,14 +20,23 @@
 #include "utils/model.h"
 #include "utils/texture.h"
 
-#include "gl_objects/mesh_object.h"
+#include "gl_objects/gl_object.h"
 
+#include <opencv2/opencv.hpp>
+
+const int kWidth = 640;
+const int kHeight= 480;
 int main( void ) {
   // Context and control init
-  Context context("F-16");
+  int frame_width = kWidth, frame_height = kHeight;
+#ifdef __APPLE__
+  frame_width *= 2;
+  frame_height *= 2;
+#endif
+  Context context("F-16", kWidth, kHeight);
   Control control(context.window());
 
-  MeshObject plane(kVertexNormalUVFace);
+  GLObject plane(kVertexNormalUVFace);
 
   /// Compile shaders
   std::vector<std::pair<UniformType, std::string> > uniform_names;
@@ -35,8 +44,8 @@ int main( void ) {
   uniform_names.push_back(std::make_pair(kMatrix4f, "mvp"));
   uniform_names.push_back(std::make_pair(kMatrix4f, "c_T_w"));
   uniform_names.push_back(std::make_pair(kTexture, "textureSampler"));
-  plane.InitShader("../shader/vertex_plane.glsl",
-                   "../shader/fragment_plane.glsl",
+  plane.InitShader("../shader/vertex_vntf.glsl",
+                   "../shader/fragment_vntf.glsl",
                    uniform_names);
 
   /// Prepare mesh data buffer
@@ -57,22 +66,33 @@ int main( void ) {
   /// Prepare mesh texture
   unsigned char *ptr;
   int width, height;
-  SetTexture("../obj/f16.bmp", ptr, width, height);
+  LoadTexture("../obj/f16.bmp", ptr, width, height);
   plane.InitTexture(width, height);
 
   std::cout << "texture loaded";
 
   // Additional settings
   glfwPollEvents();
-  glfwSetCursorPos(context.window(), 1024/2, 768/2);
+
+  glfwSetCursorPos(context.window(), frame_width / 2, frame_height / 2);
 
   glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS);
 
-  do {
+  cv::Mat im = cv::Mat(frame_height, frame_width, CV_32F);
+  cv::Mat sh = cv::Mat(frame_height, frame_width, CV_16U);
+  do
+  {
     // Update control
     control.UpdateCameraPose();
+    for (int i = 0; i < 4; ++i) {
+      for (int j = 0; j < 4; ++j) {
+        std::cout << control.projection_mat()[i][j] << " ";
+      }
+      std::cout << std::endl;
+    }
+
     glm::mat4 mvp = control.projection_mat() *
         control.view_mat() *
         glm::mat4(1.0f);
@@ -88,14 +108,49 @@ int main( void ) {
     uniforms.push_back((void*)&texture);
     std::cout << "Pushed back" << std::endl;
 
-    plane.LoadMesh((float*) vertices.data(),
-                   (float*) normals.data(),
-                   (float*) uvs.data(),
-                   (unsigned int*) indices.data());
+    plane.SetMesh((float*) vertices.data(),
+                  (float*) normals.data(),
+                  (float*) uvs.data(),
+                  (unsigned int*) indices.data());
     plane.SetTexture(ptr, width, height);
     plane.SetUniforms(uniforms);
-    std::cout << "Render" << std::endl;
     plane.Render();
+
+    glReadBuffer(GL_BACK);
+    glReadPixels(0, 0, frame_width, frame_height,
+                 GL_DEPTH_COMPONENT,
+                 GL_FLOAT, im.data);
+#ifdef __APPLE__
+    //cv::resize(im, im, cv::Size(frame_width/2, frame_height/2));
+#endif
+//    GLfloat depth = 0, max_depth = 0;
+    for (int i = 0; i < frame_height; ++i) {
+      for (int j = 0; j < frame_width; ++j) {
+        float d = im.at<float>(i, j);
+        if (isnan(d) || isinf(d)) {
+          sh.at<unsigned short>(i, j) = 0;
+        } else {
+          float clip_z = 2 * d - 1; // [0,1] -> [-1,1]
+          // [-(n+f)/(n-f)] + [2nf/(n-f)] / w_z = clip_z
+          float f = 10000.0, n = 0.01f;
+          GLfloat world_z = 2*n*f/(clip_z*(n-f)+(n+f));
+          float depth = world_z * 5000;
+          if (depth > 40000) depth = 40000;
+          sh.at<unsigned short>(i, j) = depth;
+        }
+      }
+    }
+
+    cv::Mat show;
+    cv::resize(sh, show, cv::Size(frame_width/2, frame_height/2), CV_INTER_NN);
+    cv::imshow("im", show);
+    if (cv::waitKey(10) == 27) break;
+
+    glfwSwapBuffers(context.window());
+    glfwPollEvents();
+    //break;
+
+    //cv::waitKey(-1);
     // Foreach GLObject do data updating and Render();
 //    f16.set_mvp(&mvp[0][0]);
 //    f16.set_v(&v[0][0]);
@@ -106,8 +161,6 @@ int main( void ) {
 //    camera.Render();
 
     // Additional operations
-    glfwSwapBuffers(context.window());
-    glfwPollEvents();
 
   } while( glfwGetKey(context.window(), GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
            glfwWindowShouldClose(context.window()) == 0 );

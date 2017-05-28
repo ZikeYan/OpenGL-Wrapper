@@ -6,6 +6,7 @@ in vec3 vertex_position_w;
 in vec3 vertex_normal_c;
 in vec3 eye_dir_c;
 in vec3 light_dir_c;
+in float z;
 
 // Ouput data
 out vec3 color;
@@ -20,6 +21,7 @@ void main(){
 
 	// Material properties
 	vec3 diffuse_color  = texture(textureSampler, outUV).rgb;
+	// diffuse_color = vec3(0, 1, 0);
 	vec3 ambient_color  = vec3(0.1, 0.1, 0.1) * diffuse_color;
 	vec3 specular_color = vec3(0.3, 0.3, 0.3);
 

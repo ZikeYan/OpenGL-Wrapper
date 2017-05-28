@@ -61,7 +61,7 @@ int main( void ) {
   Control control(context.window());
 
   // Create and compile our GLSL program from the shaders
-  GLuint program_id = LoadShaders("vertex_plane.glsl", "fragment_plane.glsl");
+  GLuint program_id = LoadShaders("vertex_vntf.glsl", "fragment_vntf.glsl");
   GLint matrix_id = glGetUniformLocation(program_id, "mvp");
 
   GLuint vao;

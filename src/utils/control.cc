@@ -14,14 +14,14 @@
 Control::Control(GLFWwindow *window) {
   window_ = window;
 
-  position_ = glm::vec3( 0, 0, 5 );
+  position_ = glm::vec3( 0, 0, 2 );
   horizontal_angle_ = 3.14f;
   vertical_angle_ = 0.0f;
   fov_ = 45.0f;
   move_speed_ = 3.0f;
   rotate_speed_ = 0.005f;
 
-  projection_mat_ = glm::perspective(fov_, 4.0f / 3.0f, 0.1f, 100.0f);
+  projection_mat_ = glm::perspective(fov_, 4.0f / 3.0f, 0.01f, 10000.0f);
 }
 
 glm::mat4 Control::view_mat() {
@@ -41,11 +41,16 @@ void Control::UpdateCameraPose(){
   // Get mouse position
   double xpos, ypos;
   glfwGetCursorPos(window_, &xpos, &ypos);
-  glfwSetCursorPos(window_, 1024/2, 768/2);
+
+  int width, height;
+  glfwGetFramebufferSize(window_, &width, &height);
+  glfwSetCursorPos(window_, width/2, height/2);
+#ifdef __APPLE__
+#endif
 
   // Compute new orientation
-  horizontal_angle_ += rotate_speed_ * float(1024/2 - xpos );
-  vertical_angle_   += rotate_speed_ * float( 768/2 - ypos );
+  horizontal_angle_ += rotate_speed_ * float(width/2 - xpos );
+  vertical_angle_   += rotate_speed_ * float(height/2 - ypos );
 
   glm::vec3 look_direction(
       cos(vertical_angle_) * sin(horizontal_angle_),
