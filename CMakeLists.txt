@@ -13,11 +13,8 @@ SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -Wall")
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 SET(OPENGL_SNIPPET_LIBRARIES "")
 SET(OPENGL_SNIPPET_SOURCES
-        src/main.cc
-        include/gl_objects/gl_object.h
+        include/gl_objects/vntf_demo.h
         src/gl_objects/gl_object.cc
-        # src/gl_objects/plane.cc
-        # src/gl_objects/camera.cc
         src/utils/context.cc
         src/utils/control.cc
         src/utils/model.cc
@@ -61,10 +58,15 @@ elseif (UNIX)
             ${GLFW3_STATIC_LIBRARIES})
 endif()
 
+ADD_LIBRARY(opengl-snippet ${OPENGL_SNIPPET_SOURCES})
+TARGET_LINK_LIBRARIES(opengl-snippet
+        ${OPENGL_SNIPPET_LIBRARIES} ${OpenCV_LIBS})
+
 #---------
 # Compile and Link
-ADD_EXECUTABLE(opengl-snippet ${OPENGL_SNIPPET_SOURCES})
-TARGET_LINK_LIBRARIES(opengl-snippet
-        ${OPENGL_SNIPPET_LIBRARIES}
-        ${OpenCV_LIBS})
+ADD_EXECUTABLE(vntf src/vntf.cc)
+TARGET_LINK_LIBRARIES(vntf opengl-snippet)
+
+ADD_EXECUTABLE(v src/v.cc)
+TARGET_LINK_LIBRARIES(v opengl-snippet)
 #---------

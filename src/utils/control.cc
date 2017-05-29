@@ -14,21 +14,11 @@
 Control::Control(GLFWwindow *window) {
   window_ = window;
 
-  position_ = glm::vec3( 0, 0, 2 );
-  horizontal_angle_ = 3.14f;
+  position_ = glm::vec3( 0, 0, 0 );
+  horizontal_angle_ = M_PI;
   vertical_angle_ = 0.0f;
-  fov_ = 45.0f;
   move_speed_ = 3.0f;
-  rotate_speed_ = 0.005f;
-
-  projection_mat_ = glm::perspective(fov_, 4.0f / 3.0f, 0.01f, 10000.0f);
-}
-
-glm::mat4 Control::view_mat() {
-  return view_mat_;
-}
-glm::mat4 Control::projection_mat() {
-  return projection_mat_;
+  rotate_speed_ = 0.5f;
 }
 
 void Control::UpdateCameraPose(){
@@ -38,20 +28,17 @@ void Control::UpdateCameraPose(){
   double current_time = glfwGetTime();
   float delta_time = float(current_time - last_time);
 
-  // Get mouse position
-  double xpos, ypos;
-  glfwGetCursorPos(window_, &xpos, &ypos);
-
-  int width, height;
-  glfwGetFramebufferSize(window_, &width, &height);
-  glfwSetCursorPos(window_, width/2, height/2);
-#ifdef __APPLE__
-#endif
+  if (glfwGetKey(window_, GLFW_KEY_UP)) {
+    vertical_angle_   += rotate_speed_ * delta_time;
+  } else if (glfwGetKey(window_, GLFW_KEY_DOWN)) {
+    vertical_angle_   -= rotate_speed_ * delta_time;
+  } else if (glfwGetKey(window_, GLFW_KEY_LEFT)) {
+    horizontal_angle_ += rotate_speed_ * delta_time;
+  } else if (glfwGetKey(window_, GLFW_KEY_RIGHT)) {
+    horizontal_angle_ -= rotate_speed_ * delta_time;
+  }
 
   // Compute new orientation
-  horizontal_angle_ += rotate_speed_ * float(width/2 - xpos );
-  vertical_angle_   += rotate_speed_ * float(height/2 - ypos );
-
   glm::vec3 look_direction(
       cos(vertical_angle_) * sin(horizontal_angle_),
       sin(vertical_angle_),
@@ -63,11 +50,11 @@ void Control::UpdateCameraPose(){
       cos(vertical_angle_) * cos(horizontal_angle_));
 
   glm::vec3 right = glm::vec3(
-      sin(horizontal_angle_ - 3.14f/2.0f),
+      sin(horizontal_angle_ - M_PI_2),
       0,
-      cos(horizontal_angle_ - 3.14f/2.0f));
+      cos(horizontal_angle_ - M_PI_2));
 
-  glm::vec3 up = glm::cross(right, look_direction );
+  glm::vec3 up = glm::cross(right, look_direction);
 
   if (glfwGetKey( window_, GLFW_KEY_W ) == GLFW_PRESS) {
     position_ += move_direction * move_speed_ * delta_time;

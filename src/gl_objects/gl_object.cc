@@ -39,40 +39,44 @@ GLObject::~GLObject() {
 
 void GLObject::InitShader(std::string vert_shader_path,
                           std::string frag_shader_path,
-                          std::vector <std::pair<UniformType, std::string> >
-                          &uniform_names) {
+                          std::unordered_map<std::string, UniformType> &uniform_types) {
   LoadShaders(vert_shader_path, frag_shader_path, program_);
 
-  uniform_count_ = uniform_names.size();
+  uniform_count_ = uniform_types.size();
   if (uniform_count_ == 0)
     return;
 
   uniforms_.clear();
-  for (int i = 0; i < uniform_count_; ++i) {
+  for (auto& uniform_type : uniform_types) {
     GLint uniform_id = glGetUniformLocation(program_,
-                                            uniform_names[i].second.c_str());
+                                            uniform_type.first.c_str());
     if (uniform_id < 0) {
       std::cerr << "Invalid uniform name!" << std::endl;
       exit(1);
     }
-    std::cout << uniform_names[i].second << " : " << uniform_id << std::endl;
-    uniforms_.push_back(std::make_pair(uniform_names[i].first, uniform_id));
+
+    std::cout << uniform_type.first << " : " << uniform_id << std::endl;
+    uniforms_[uniform_type.first] = Uniform(uniform_type.second,
+                                            uniform_id,
+                                            NULL);
   }
 
   is_shader_inited_ = true;
 }
 
-void GLObject::InitVAO(std::vector<int>& count_of_objects) {
+void GLObject::InitVAO(std::vector<int>& max_count_of_objects) {
   glGenVertexArrays(1, &vao_);
   glBindVertexArray(vao_);
 
-  if (count_of_objects.size() != vbo_count_) {
+  if (max_count_of_objects.size() != vbo_count_) {
     std::cerr << "Invalid buffer sizes!" << std::endl;
     exit(1);
   }
 
-  count_of_objects_ = std::vector<int>(count_of_objects.begin(),
-                                       count_of_objects.end());
+  max_count_of_objects_ = std::vector<int>(max_count_of_objects.begin(),
+                                           max_count_of_objects.end());
+  curr_count_of_objects_ = std::vector<int>(max_count_of_objects.begin(),
+                                            max_count_of_objects.end());
 
   vbos_ = new GLuint[vbo_count_];
   glGenBuffers(vbo_count_, vbos_);
@@ -81,7 +85,7 @@ void GLObject::InitVAO(std::vector<int>& count_of_objects) {
   glEnableVertexAttribArray(0);
   glBindBuffer(GL_ARRAY_BUFFER, vbos_[0]);
   glBufferData(GL_ARRAY_BUFFER,
-               sizeof(float) * 3 * count_of_objects_[0],
+               sizeof(float) * 3 * max_count_of_objects_[0],
                NULL,
                GL_STATIC_DRAW);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -91,14 +95,14 @@ void GLObject::InitVAO(std::vector<int>& count_of_objects) {
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos_[1]);
       glBufferData(GL_ELEMENT_ARRAY_BUFFER,
                    // vertex number <-> index
-                   sizeof(unsigned int) * count_of_objects_[0],
+                   sizeof(unsigned int) * max_count_of_objects_[0],
                    NULL,
                    GL_STATIC_DRAW);
       break;
     case kVertexFace:
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos_[1]);
       glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                   sizeof(unsigned int) * 3 * count_of_objects_[1],
+                   sizeof(unsigned int) * 3 * max_count_of_objects_[1],
                    NULL,
                    GL_STATIC_DRAW);
       break;
@@ -106,14 +110,14 @@ void GLObject::InitVAO(std::vector<int>& count_of_objects) {
       glEnableVertexAttribArray(1);
       glBindBuffer(GL_ARRAY_BUFFER, vbos_[1]);
       glBufferData(GL_ARRAY_BUFFER,
-                   sizeof(float) * 3 * count_of_objects_[1],
+                   sizeof(float) * 3 * max_count_of_objects_[1],
                    NULL,
                    GL_STATIC_DRAW);
       glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos_[2]);
       glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                   sizeof(unsigned int) * 3 * count_of_objects_[2],
+                   sizeof(unsigned int) * 3 * max_count_of_objects_[2],
                    NULL,
                    GL_STATIC_DRAW);
       break;
@@ -121,7 +125,7 @@ void GLObject::InitVAO(std::vector<int>& count_of_objects) {
       glEnableVertexAttribArray(1);
       glBindBuffer(GL_ARRAY_BUFFER, vbos_[1]);
       glBufferData(GL_ARRAY_BUFFER,
-                   sizeof(float) * 3 * count_of_objects_[1],
+                   sizeof(float) * 3 * max_count_of_objects_[1],
                    NULL,
                    GL_STATIC_DRAW);
       glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -129,14 +133,14 @@ void GLObject::InitVAO(std::vector<int>& count_of_objects) {
       glEnableVertexAttribArray(2);
       glBindBuffer(GL_ARRAY_BUFFER, vbos_[2]);
       glBufferData(GL_ARRAY_BUFFER,
-                   sizeof(float) * 2 * count_of_objects_[2],
+                   sizeof(float) * 2 * max_count_of_objects_[2],
                    NULL,
                    GL_STATIC_DRAW);
       glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
       glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos_[3]);
       glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                   sizeof(unsigned int) * 3 * count_of_objects_[3],
+                   sizeof(unsigned int) * 3 * max_count_of_objects_[3],
                    NULL,
                    GL_STATIC_DRAW);
     default:
@@ -161,19 +165,18 @@ void GLObject::InitTexture(int width, int height) {
   is_texture_inited_ = true;
 }
 
-void GLObject::SetUniforms(std::vector<void *> uniform_values) {
+void GLObject::SetUniforms(std::unordered_map<std::string, void*>& uniform_values) {
   if (uniforms_.size() != uniform_values.size()) {
     std::cerr << "Incorrect uniform size" << std::endl;
     exit(1);
   }
 
-  uniform_values_.resize(uniform_values.size());
-  for (int i = 0; i < uniform_values.size(); ++i) {
-    if (uniforms_[i].first == kTexture) {
-      // No need to buffer data
-    } else if (uniforms_[i].first == kMatrix4f) {
-      uniform_values_[i] = uniform_values[i];
+  for (auto& uniform_value : uniform_values) {
+    if (uniforms_.find(uniform_value.first) == uniforms_.end()) {
+      std::cerr << "Invalid uniform name!" << std::endl;
+      exit(1);
     }
+    uniforms_[uniform_value.first].data = uniform_value.second;
   }
 }
 
@@ -184,52 +187,82 @@ void GLObject::SetTexture(unsigned char *data, int width, int height) {
   glGenerateMipmap(GL_TEXTURE_2D);
 }
 
-void GLObject::SetMesh(float* vertices) {
+void GLObject::SetMesh(float* vertices, int vertex_count) {
   if (mesh_type_ != kVertex) {
     std::cerr << "Incompatible mesh type!" << std::endl;
     exit(1);
   }
+
+  if (vertex_count > max_count_of_objects_[0]) {
+    std::cerr << "Insufficient memory!" << std::endl;
+    exit(1);
+  }
+
+  curr_count_of_objects_[0] = vertex_count;
+  curr_count_of_objects_[1] = vertex_count;
+
   glEnableVertexAttribArray(0);
   glBindBuffer(GL_ARRAY_BUFFER, vbos_[0]);
   glBufferData(GL_ARRAY_BUFFER,
-               sizeof(float) * 3 * count_of_objects_[0],
+               sizeof(float) * 3 * curr_count_of_objects_[0],
                vertices,
                GL_STATIC_DRAW);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+  std::vector<unsigned int> indices;
+  indices.resize(vertex_count);
+  for (unsigned int i = 0; i < vertex_count; ++i) {
+    indices[i] = i;
+  }
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos_[1]);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+      // vertex number <-> index
+               sizeof(unsigned int) * curr_count_of_objects_[1],
+               indices.data(),
+               GL_STATIC_DRAW);
 }
 
-void GLObject::SetMesh(float* vertices,
-                       unsigned int *faces) {
+void GLObject::SetMesh(float* vertices, int vertex_count,
+                       unsigned int *faces, int face_count) {
   if (mesh_type_ != kVertexFace) {
     std::cerr << "Incompatible mesh type!" << std::endl;
     exit(1);
   }
 
+  curr_count_of_objects_[0] = vertex_count;
+  curr_count_of_objects_[1] = face_count;
+
   glEnableVertexAttribArray(0);
   glBindBuffer(GL_ARRAY_BUFFER, vbos_[0]);
   glBufferData(GL_ARRAY_BUFFER,
-               sizeof(float) * 3 * count_of_objects_[0],
+               sizeof(float) * 3 * curr_count_of_objects_[0],
                vertices,
                GL_STATIC_DRAW);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos_[1]);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-               sizeof(unsigned int) * 3 * count_of_objects_[1],
+               sizeof(unsigned int) * 3 * curr_count_of_objects_[1],
                faces,
                GL_STATIC_DRAW);
 }
 
-void GLObject::SetMesh(float* vertices, float* normals,
-                       unsigned int *faces) {
+void GLObject::SetMesh(float* vertices, int vertex_count,
+                       float* normals, int normal_count,
+                       unsigned int *faces, int face_count) {
   if (mesh_type_ != kVertexNormalFace) {
     std::cerr << "Incompatible mesh type!" << std::endl;
     exit(1);
   }
+
+  curr_count_of_objects_[0] = vertex_count;
+  curr_count_of_objects_[1] = normal_count;
+  curr_count_of_objects_[2] = face_count;
+
   glEnableVertexAttribArray(0);
   glBindBuffer(GL_ARRAY_BUFFER, vbos_[0]);
   glBufferData(GL_ARRAY_BUFFER,
-               sizeof(float) * 3 * count_of_objects_[0],
+               sizeof(float) * 3 * curr_count_of_objects_[0],
                vertices,
                GL_STATIC_DRAW);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -237,29 +270,35 @@ void GLObject::SetMesh(float* vertices, float* normals,
   glEnableVertexAttribArray(1);
   glBindBuffer(GL_ARRAY_BUFFER, vbos_[1]);
   glBufferData(GL_ARRAY_BUFFER,
-               sizeof(float) * 3 * count_of_objects_[1],
+               sizeof(float) * 3 * curr_count_of_objects_[1],
                normals,
                GL_STATIC_DRAW);
   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos_[2]);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-               sizeof(unsigned int) * 3 * count_of_objects_[2],
+               sizeof(unsigned int) * 3 * curr_count_of_objects_[2],
                faces,
                GL_STATIC_DRAW);
 }
 
-void GLObject::SetMesh(float *vertices, float *normals, float *uvs,
-                       unsigned int *faces) {
+void GLObject::SetMesh(float *vertices, int vertex_count,
+                       float *normals, int normal_count,
+                       float *uvs,      int uv_count,
+                       unsigned int *faces, int face_count) {
   if (mesh_type_ != kVertexNormalUVFace) {
     std::cerr << "Incompatible mesh type!" << std::endl;
     exit(1);
   }
+  curr_count_of_objects_[0] = vertex_count;
+  curr_count_of_objects_[1] = normal_count;
+  curr_count_of_objects_[2] = uv_count;
+  curr_count_of_objects_[3] = face_count;
 
   glEnableVertexAttribArray(0);
   glBindBuffer(GL_ARRAY_BUFFER, vbos_[0]);
   glBufferData(GL_ARRAY_BUFFER,
-               sizeof(float) * 3 * count_of_objects_[0],
+               sizeof(float) * 3 * curr_count_of_objects_[0],
                vertices,
                GL_STATIC_DRAW);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -267,7 +306,7 @@ void GLObject::SetMesh(float *vertices, float *normals, float *uvs,
   glEnableVertexAttribArray(1);
   glBindBuffer(GL_ARRAY_BUFFER, vbos_[1]);
   glBufferData(GL_ARRAY_BUFFER,
-               sizeof(float) * 3 * count_of_objects_[1],
+               sizeof(float) * 3 * curr_count_of_objects_[1],
                normals,
                GL_STATIC_DRAW);
   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
@@ -275,14 +314,14 @@ void GLObject::SetMesh(float *vertices, float *normals, float *uvs,
   glEnableVertexAttribArray(2);
   glBindBuffer(GL_ARRAY_BUFFER, vbos_[2]);
   glBufferData(GL_ARRAY_BUFFER,
-               sizeof(float) * 2 * count_of_objects_[2],
+               sizeof(float) * 2 * curr_count_of_objects_[2],
                uvs,
                GL_STATIC_DRAW);
   glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbos_[3]);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-               sizeof(unsigned int) * 3 * count_of_objects_[3],
+               sizeof(unsigned int) * 3 * curr_count_of_objects_[3],
                faces,
                GL_STATIC_DRAW);
 }
@@ -293,19 +332,34 @@ void GLObject::Render() {
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE0, texture_);
 
-  for (int i = 0; i < uniforms_.size(); ++i) {
-    if (uniforms_[i].first == kTexture) {
-      glUniform1i(uniforms_[i].second, 0);
-    } else if (uniforms_[i].first == kMatrix4f) {
-      glUniformMatrix4fv(uniforms_[i].second, 1, GL_FALSE,
-                         (float*)uniform_values_[i]);
+  for (auto& uniform : uniforms_) {
+    if (uniform.second.type == kTexture) {
+      glUniform1i(uniform.second.id, 0);
+    } else if (uniform.second.type == kMatrix4f) {
+      glUniformMatrix4fv(uniform.second.id, 1, GL_FALSE,
+                         (float*)uniform.second.data);
     }
   }
-
   glBindVertexArray(vao_);
 
   /// only deal with kVertexNormalUVFace at current
   // TODO: Adapt to other situations
-  glDrawElements(GL_TRIANGLES,
-                 count_of_objects_[3] * 3, GL_UNSIGNED_INT, 0);
+  switch (mesh_type_) {
+    case kVertex:
+    case kVertexFace:
+      glDrawElements(GL_TRIANGLES,
+                     curr_count_of_objects_[1], GL_UNSIGNED_INT, 0);
+      break;
+    case kVertexNormalFace:
+      glDrawElements(GL_TRIANGLES,
+                     curr_count_of_objects_[2], GL_UNSIGNED_INT, 0);
+      break;
+    case kVertexNormalUVFace:
+      glDrawElements(GL_TRIANGLES,
+                     curr_count_of_objects_[3] * 3, GL_UNSIGNED_INT, 0);
+      break;
+    case kImage:
+      break;
+  }
+
 }
