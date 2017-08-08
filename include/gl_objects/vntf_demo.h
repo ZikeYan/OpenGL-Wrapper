@@ -30,8 +30,8 @@ public:
     uniform_names["c_T_w"]          = kMatrix4f;
     uniform_names["textureSampler"] = kTexture;
     object_->InitShader("../shader/vertex_vntf.glsl",
-                     "../shader/fragment_vntf.glsl",
-                     uniform_names);
+                        "../shader/fragment_vntf.glsl",
+                        uniform_names);
 
     /// Prepare data buffer
     std::vector<int> count_of_objects;
@@ -58,7 +58,7 @@ public:
     object_->SetMesh((float*)vertices_.data(), vertices_.size(),
                      (float*)normals_.data(), normals_.size(),
                      (float*)uvs_.data(), uvs_.size(),
-                     indices_.data(), indices_.size());
+                     indices_.data(), indices_.size()/3);
     object_->SetTexture(texture_data_,
                         texture_width_, texture_height_);
 
@@ -68,7 +68,6 @@ public:
     uniform_values["textureSampler"] = NULL;
 
     object_->SetUniforms(uniform_values);
-
     object_->Render();
   }
 

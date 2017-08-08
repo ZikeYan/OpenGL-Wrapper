@@ -20,6 +20,7 @@ public:
   Context(std::string window_name, int width, int height,
           float z_near = 0.1f, float z_far = 1000.0f);
   cv::Mat CaptureDepth();
+  cv::Mat Capture();
 
   GLFWwindow *window() const {
     return window_;
@@ -40,6 +41,7 @@ private:
   GLFWwindow *window_;
   glm::mat4 projection_mat_;
 
+  cv::Mat color_mat_;
   cv::Mat depth_mat_float_;
   cv::Mat depth_mat_16u_;
 

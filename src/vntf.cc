@@ -33,7 +33,7 @@ int main( void ) {
   // Additional settings
   glfwPollEvents();
 
-  glClearColor(0.0f, 0.0f, 0.4f, 0.0f);
+  glClearColor(74.0 / 255.0f, 117.0f / 255.0f, 140.0f / 255.0f, 0.0f);
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS);
 
@@ -45,9 +45,9 @@ int main( void ) {
     glfwSwapBuffers(context.window());
     glfwPollEvents();
 
-    cv::Mat m = context.CaptureDepth();
-    cv::flip(m, m, 0);
-    cv::imshow("m", m);
+    //cv::Mat m = context.CaptureDepth();
+    //cv::flip(m, m, 0);
+    //cv::imshow("m", m);
   } while( glfwGetKey(context.window(), GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
            glfwWindowShouldClose(context.window()) == 0 );
 

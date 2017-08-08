@@ -69,4 +69,7 @@ TARGET_LINK_LIBRARIES(vntf opengl-snippet)
 
 ADD_EXECUTABLE(v src/v.cc)
 TARGET_LINK_LIBRARIES(v opengl-snippet)
+
+ADD_EXECUTABLE(atlas src/atlas.cc)
+TARGET_LINK_LIBRARIES(atlas opengl-snippet)
 #---------
