@@ -2,6 +2,10 @@
 // Created by Neo on 08/08/2017.
 //
 
+//
+// Created by Neo on 08/08/2017.
+//
+
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -38,7 +42,7 @@ int main() {
 
     cv::Point vertices[1][3];
     vertices[0][0] = cv::Point(uvs_[i0].x * texture_width_,
-                              (1 - uvs_[i0].y) *texture_height_);
+                               (1 - uvs_[i0].y) *texture_height_);
     vertices[0][1] = cv::Point(uvs_[i1].x * texture_width_,
                                (1 - uvs_[i1].y) * texture_height_);
     vertices[0][2] = cv::Point(uvs_[i2].x * texture_width_,
@@ -54,7 +58,7 @@ int main() {
     int npt[] = {3};
 
     cv::polylines(shading, ppt, npt, 1, true,
-                 cv::Scalar(0, 255, 0));
+                  cv::Scalar(0, 255, 0));
   }
   //cv::imshow("shading", shading);
   //cv::waitKey(-1);

@@ -50,9 +50,11 @@ public:
 
     glm::mat4 transform = glm::mat4(1.0f);
     transform[1][1] = transform[2][2] = -1;
+    glm::mat4 model = glm::mat4(1.0f);
+    model[0][0] = model[1][1] = -1;
     glm::mat4 mvp = context_->projection_mat() *
                     control_->view_mat() * transform *
-                    glm::mat4(1.0f);
+                    model;
     glm::mat4 v = control_->view_mat();
 
     object_->SetMesh((float*)vertices_.data(), vertices_.size(),

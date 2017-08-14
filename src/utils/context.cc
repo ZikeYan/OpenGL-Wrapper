@@ -53,14 +53,14 @@ Context::Context(std::string window_name, int width, int height,
   width_ *= 2;
   height_ *= 2;
 #endif
-  color_mat_ = cv::Mat(height_, width_, CV_8UC3);
+  color_mat_ = cv::Mat(height_, width_, CV_8UC4);
   depth_mat_float_ = cv::Mat(height_, width_, CV_32F);
   depth_mat_16u_   = cv::Mat(height_, width_, CV_16U);
 }
 
 cv::Mat Context::Capture() {
   glReadPixels(0, 0, width_, height_,
-               GL_BGR, GL_UNSIGNED_BYTE, color_mat_.data);
+               GL_BGRA, GL_UNSIGNED_BYTE, color_mat_.data);
   cv::Mat ret;
   ret = color_mat_.clone();
   cv::flip(ret, ret, 0);
