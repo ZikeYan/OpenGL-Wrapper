@@ -13,6 +13,12 @@ SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -Wall")
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 SET(OPENGL_SNIPPET_LIBRARIES "")
 SET(OPENGL_SNIPPET_SOURCES
+        include/program.cc
+        include/window.cc
+        include/texture.cc
+        include/args.cc
+        include/uniform.cc
+        include/camera.cc
         include/gl_objects/vntf_demo.h
         src/gl_objects/gl_object.cc
         src/utils/context.cc
