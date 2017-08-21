@@ -11,6 +11,8 @@
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 
+#include "window.h"
+
 namespace gl {
 class Camera {
 public:
@@ -25,15 +27,20 @@ public:
     projection_ = glm::perspective(fov, (float)width/(float)height,
                                    z_near, z_far);
   }
+  // Manually set view from input (short version)
   void set_view(glm::mat4 view) {
     view_ = view;
   }
+  // ... Or set it with interactions (long version)
+  void SwitchInteraction(bool enable_interaction);
+  void SetView(Window &window);
+
   void set_model(glm::mat4 model) {
     model_ = model;
   }
 
   /// Usually used for uniforms
-  const glm::mat4 mvp() {
+  glm::mat4 mvp() {
     return projection_ * view_ * model_;
   }
   const glm::mat4 projection() const {
@@ -50,6 +57,15 @@ private:
   glm::mat4 projection_; // K
   glm::mat4 view_;       // [R | t]
   glm::mat4 model_;      // e.g. {x, -y, -z}
+
+  // Polar-system: interaction from the keyboard
+  bool interaction_enabled_;
+  glm::vec3 position_;
+  float elevation_;
+  float azimuth_;
+
+  float kMoveSpeed = 3.0f;
+  float kRotateSpeed = 0.5f;
 };
 }
 
