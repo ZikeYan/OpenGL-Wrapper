@@ -55,7 +55,7 @@ Window::Window(std::string window_name, int width, int height) {
 
 cv::Mat Window::CaptureRGB() {
   glReadPixels(0, 0, img_width_, img_height_,
-               GL_RGB, GL_UNSIGNED_BYTE, rgb_.data);
+               GL_BGR, GL_UNSIGNED_BYTE, rgb_.data);
   cv::Mat ret;
   cv::flip(rgb_, ret, 0);
   return ret;
@@ -63,7 +63,7 @@ cv::Mat Window::CaptureRGB() {
 
 cv::Mat Window::CaptureRGBA() {
   glReadPixels(0, 0, img_width_, img_height_,
-               GL_RGBA, GL_UNSIGNED_BYTE, rgba_.data);
+               GL_BGRA, GL_UNSIGNED_BYTE, rgba_.data);
   cv::Mat ret;
   cv::flip(rgba_, ret, 0);
   return ret;

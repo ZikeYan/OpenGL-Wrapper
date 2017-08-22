@@ -12,6 +12,7 @@ Texture::Texture(std::string texture_path){
 
 void Texture::Load(std::string texture_path) {
   texture_ = cv::imread(texture_path);
+  cv::flip(texture_, texture_, 0);
   width_  = texture_.cols;
   height_ = texture_.rows;
 }

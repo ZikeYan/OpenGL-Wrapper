@@ -36,7 +36,7 @@ void main(){
 	} else {
         diffuse_color = vec4(0, 0, 0, 0);
 	}
-	1 * texture(textureSampler,outUV).rgba;
+	diffuse_color = 1 * texture(textureSampler,outUV).rgba;
 	// diffuse_color = vec3(0, 1, 0);
 	vec4 ambient_color  = vec4(0.1, 0.1, 0.1, 1) * diffuse_color;
 	vec4 specular_color = vec4(0.3, 0.3, 0.3, 1);

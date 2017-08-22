@@ -9,6 +9,8 @@ namespace gl {
 Camera::Camera(float fov, int width, int height,
                float z_near, float z_far) {
   set_perspective(fov, width, height, z_near, z_far);
+  view_  = glm::mat4(1.0f);
+  model_ = glm::mat4(1.0f);
 }
 
 void Camera::SwitchInteraction(bool enable_interaction) {
@@ -22,6 +24,8 @@ void Camera::SwitchInteraction(bool enable_interaction) {
 }
 
 void Camera::SetView(Window &window) {
+  if (! interaction_enabled_) return;
+
   static double last_time = glfwGetTime();
   double current_time = glfwGetTime();
   float delta_time = float(current_time - last_time);

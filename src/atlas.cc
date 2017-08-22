@@ -16,16 +16,11 @@
 #include "window.h"
 #include "texture.h"
 #include "args.h"
+#include "model.h"
 
 int main() {
-
-  std::vector<glm::vec3> vertices_;
-  std::vector<glm::vec3> normals_;
-  std::vector<glm::vec2> uvs_;
-  std::vector<unsigned int> indices_;
-
-  LoadModel("../obj/f16.obj", vertices_, uvs_, normals_, indices_);
-  std::cerr << vertices_.size() << " " << indices_.size()/3 << std::endl;
+  gl::Model model;
+  model.LoadObj("../obj/f16.obj");
 
   gl::Texture texture;
   texture.Load("../obj/f16.bmp");
@@ -37,16 +32,15 @@ int main() {
   gl::Program program("../shader/vertex_atlas.glsl",
                       "../shader/fragment_atlas.glsl");
   gl::Args args(4);
-  std::cout << uvs_.data() << std::endl;
   args.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 2, GL_FLOAT},
-                  uvs_.size(), uvs_.data());
+                  model.uvs().size(), model.uvs().data());
   args.BindBuffer(1, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
-                  vertices_.size(), vertices_.data());
+                  model.positions().size(), model.positions().data());
   args.BindBuffer(2, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
-                  normals_.size(), normals_.data());
+                  model.normals().size(), model.normals().data());
   args.BindBuffer(3, {GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int),
                       1, GL_UNSIGNED_INT},
-                  indices_.size(), indices_.data());
+                  model.indices().size(), model.indices().data());
 
   // Additional settings
   glfwPollEvents();
@@ -62,7 +56,7 @@ int main() {
     texture.Bind(0);
     glUseProgram(program.id());
     glBindVertexArray(args.vao());
-    glDrawElements(GL_TRIANGLES, indices_.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, model.indices().size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 
     window.swap_buffer();

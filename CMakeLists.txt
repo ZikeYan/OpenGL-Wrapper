@@ -19,6 +19,7 @@ SET(OPENGL_SNIPPET_SOURCES
         include/args.cc
         include/uniform.cc
         include/camera.cc
+        include/model.cc
         include/gl_objects/vntf_demo.h
         src/gl_objects/gl_object.cc
         src/utils/context.cc
