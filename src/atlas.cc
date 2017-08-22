@@ -9,6 +9,7 @@
 #include <opencv2/opencv.hpp>
 #include <utils/shader.h>
 #include <program.h>
+#include <uniform.h>
 #include "utils/model.h"
 #include "utils/texture.h"
 #include "utils/context.h"
@@ -31,6 +32,7 @@ int main() {
 
   gl::Program program("../shader/vertex_atlas.glsl",
                       "../shader/fragment_atlas.glsl");
+  gl::Uniform uniform_light(program.id(), "light", gl::kVector3f);
   gl::Args args(4);
   args.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 2, GL_FLOAT},
                   model.uvs().size(), model.uvs().data());
@@ -55,6 +57,9 @@ int main() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     texture.Bind(0);
     glUseProgram(program.id());
+
+    glm::vec3 light(2, 4, 2);
+    uniform_light.Bind(&light);
     glBindVertexArray(args.vao());
     glDrawElements(GL_TRIANGLES, model.indices().size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);

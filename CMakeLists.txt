@@ -74,12 +74,9 @@ TARGET_LINK_LIBRARIES(opengl-snippet
 ADD_EXECUTABLE(vntf src/vntf.cc)
 TARGET_LINK_LIBRARIES(vntf opengl-snippet)
 
-ADD_EXECUTABLE(v src/v.cc)
-TARGET_LINK_LIBRARIES(v opengl-snippet)
+ADD_EXECUTABLE(cube src/cube.cc)
+TARGET_LINK_LIBRARIES(cube opengl-snippet)
 
 ADD_EXECUTABLE(atlas src/atlas.cc)
 TARGET_LINK_LIBRARIES(atlas opengl-snippet)
-
-ADD_EXECUTABLE(projection src/projection.cc)
-TARGET_LINK_LIBRARIES(projection opengl-snippet)
 #---------

@@ -28,7 +28,7 @@ public:
     std::unordered_map<std::string, UniformType> uniform_names;
     uniform_names["mvp"]            = kMatrix4f;
     uniform_names["c_T_w"]          = kMatrix4f;
-    uniform_names["textureSampler"] = kTexture;
+    uniform_names["texture_sampler"] = kTexture;
     object_->InitShader("../shader/vertex_vntf.glsl",
                         "../shader/fragment_vntf.glsl",
                         uniform_names);
@@ -67,7 +67,7 @@ public:
     std::unordered_map<std::string, void*> uniform_values;
     uniform_values["mvp"]            = (void*)&mvp[0][0];
     uniform_values["c_T_w"]          = (void*)&v[0][0];
-    uniform_values["textureSampler"] = NULL;
+    uniform_values["texture_sampler"] = NULL;
 
     object_->SetUniforms(uniform_values);
     object_->Render();

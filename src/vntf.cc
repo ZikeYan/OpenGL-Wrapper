@@ -52,7 +52,8 @@ int main() {
   texture.Init();
   gl::Uniform uniform_mvp(program.id(), "mvp", gl::kMatrix4f);
   gl::Uniform uniform_view(program.id(), "c_T_w", gl::kMatrix4f);
-  gl::Uniform uniform_tex(program.id(), "textureSampler", gl::kTexture2D);
+  gl::Uniform uniform_tex(program.id(), "texture_sampler", gl::kTexture2D);
+  gl::Uniform uniform_light(program.id(), "light", gl::kVector3f);
 
   gl::Args args(4);
   args.InitBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
@@ -72,6 +73,7 @@ int main() {
   glDepthFunc(GL_LESS);
 
   cv::Mat capture;
+  float t = 0;
   do {
     // Update control
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -80,6 +82,8 @@ int main() {
     glm::mat4 projection = camera.projection();
     glm::mat4 mvp = camera.mvp();
     glm::mat4 view = camera.view();
+    glm::vec3 light = glm::vec3(0, cos(t), sin(t));
+    t += 0.01f;
     int tex_idx = 0;
 
     glUseProgram(program.id());
@@ -87,6 +91,7 @@ int main() {
     uniform_mvp.Bind(&mvp[0][0]);
     uniform_view.Bind(&view[0][0]);
     uniform_tex.Bind(&tex_idx);
+    uniform_light.Bind(&light);
 
     glBindVertexArray(args.vao());
     args.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
@@ -101,13 +106,16 @@ int main() {
 
     glDrawElements(GL_TRIANGLES, model.indices().size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
-    capture = window.CaptureRGB();
+    capture = window.CaptureDepth();
     window.swap_buffer();
   } while( window.get_key(GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
            window.should_close() == 0 );
 
-  cv::imshow("Capture", capture);
-  cv::waitKey(-1);
+//  cv::Mat depths = camera.ConvertDepthBuffer(capture, 5000);
+//  cv::imshow("depth", depths);
+//  cv::waitKey(-1);
+//  cv::imwrite("depth.png", depths);
+
   // Close OpenGL window and terminate GLFW
   glfwTerminate();
   return 0;

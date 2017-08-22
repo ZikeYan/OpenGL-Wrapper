@@ -24,12 +24,14 @@ Uniform::Uniform(GLuint program, std::string name,
 
 void Uniform::Bind(void *data) {
   switch (type_) {
-    case kMatrix4f:
-      glUniformMatrix4fv(uniform_id_, 1, GL_FALSE, (float*)data);
-      break;
     case kTexture2D:
       glUniform1i(uniform_id_, *((int*)data));
       break;
+    case kMatrix4f:
+      glUniformMatrix4fv(uniform_id_, 1, GL_FALSE, (float*)data);
+      break;
+    case kVector3f:
+      glUniform3fv(uniform_id_, 1, (float*)data);
     default:
       break;
   }

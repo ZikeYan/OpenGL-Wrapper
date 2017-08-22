@@ -84,4 +84,25 @@ void Camera::SetView(Window &window) {
 
   last_time = current_time;
 }
+
+cv::Mat Camera::ConvertDepthBuffer(cv::Mat& depthf, float factor) {
+  cv::Mat depths = cv::Mat(depthf.rows, depthf.cols, CV_16UC1);
+  for (int i = 0; i < depthf.rows; ++i) {
+    for (int j = 0; j < depthf.cols; ++j) {
+      float z = depthf.at<float>(i, j);
+      if (isnan(z) || isinf(z)) {
+        depths.at<unsigned short>(i, j) = 0;
+      } else {
+        float clip_z = 2 * z - 1; // [0,1] -> [-1,1]
+        // [-(n+f)/(n-f)] + [2nf/(n-f)] / w_z = clip_z
+        GLfloat world_z = 2*z_near_*z_far_/(clip_z*(z_near_-z_far_)+
+                                            (z_near_+z_far_));
+        float d = world_z * factor;
+        d = (d > factor * 5) ? factor * 5 : d;
+        depths.at<unsigned short>(i, j) = (unsigned short)(d);
+      }
+    }
+  }
+  return depths;
+}
 }
