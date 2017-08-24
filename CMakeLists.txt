@@ -83,4 +83,7 @@ TARGET_LINK_LIBRARIES(atlas-projection opengl-snippet)
 
 ADD_EXECUTABLE(atlas-shading src/shading.cc)
 TARGET_LINK_LIBRARIES(atlas-shading opengl-snippet)
+
+ADD_EXECUTABLE(float-texture src/float_texture.cc)
+TARGET_LINK_LIBRARIES(float-texture opengl-snippet)
 #---------

@@ -3,8 +3,6 @@
 layout(location = 0) in vec3 in_position;
 out vec2 uv;
 
-uniform mat4 mvp;
-
 void main() {
     // clip coordinate
     gl_Position = vec4(in_position, 1);
