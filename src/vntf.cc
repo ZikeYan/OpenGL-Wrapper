@@ -30,15 +30,16 @@
 #include "texture.h"
 #include "args.h"
 #include "model.h"
+#include "trajectory.h"
 
 const int kWidth  = 640;
 const int kHeight = 480;
 int main() {
   /// Load model and texture
   gl::Model model;
-  model.LoadObj("../obj/f16.obj");
+  model.LoadObj("../obj/beethoven.obj");
   gl::Texture texture;
-  texture.Load("../obj/f16.bmp");
+  texture.Load("../obj/beethoven.png");
 
   // Context and control init
   gl::Window window("F-16", kWidth, kHeight);
@@ -47,8 +48,8 @@ int main() {
   glm::mat4 model_mat = glm::mat4(1.0f);
   camera.set_model(model_mat);
 
-  gl::Program program("../shader/vertex_vntf.glsl",
-                      "../shader/fragment_vntf.glsl");
+  gl::Program program("../shader/vntf_vertex.glsl",
+                      "../shader/vntf_fragment.glsl");
   texture.Init();
   gl::Uniform uniform_mvp(program.id(), "mvp", gl::kMatrix4f);
   gl::Uniform uniform_view(program.id(), "c_T_w", gl::kMatrix4f);
@@ -73,7 +74,11 @@ int main() {
   glDepthFunc(GL_LESS);
 
   cv::Mat capture;
+  gl::Trajectory traj;
+  traj.Load("test.traj");
+
   float t = 0;
+  int iter = 0;
   do {
     // Update control
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -82,7 +87,10 @@ int main() {
     glm::mat4 projection = camera.projection();
     glm::mat4 mvp = camera.mvp();
     glm::mat4 view = camera.view();
-    glm::vec3 light = glm::vec3(0, cos(t), sin(t));
+    //glm::mat4 view = traj.poses()[iter++];
+    //glm::mat4 mvp = projection * view * model_mat;
+
+    glm::vec3 light = glm::vec3(0, 20 * cos(t), 20 * sin(t));
     t += 0.01f;
     int tex_idx = 0;
 

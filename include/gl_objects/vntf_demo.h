@@ -29,8 +29,8 @@ public:
     uniform_names["mvp"]            = kMatrix4f;
     uniform_names["c_T_w"]          = kMatrix4f;
     uniform_names["texture_sampler"] = kTexture;
-    object_->InitShader("../shader/vertex_vntf.glsl",
-                        "../shader/fragment_vntf.glsl",
+    object_->InitShader("../shader/vntf_vertex.glsl",
+                        "../shader/vntf_fragment.glsl",
                         uniform_names);
 
     /// Prepare data buffer

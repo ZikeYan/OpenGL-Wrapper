@@ -19,6 +19,7 @@ SET(OPENGL_SNIPPET_SOURCES
         include/args.cc
         include/uniform.cc
         include/camera.cc
+        include/trajectory.cc
         include/model.cc
         include/gl_objects/vntf_demo.h
         src/gl_objects/gl_object.cc
@@ -77,6 +78,9 @@ TARGET_LINK_LIBRARIES(vntf opengl-snippet)
 ADD_EXECUTABLE(cube src/cube.cc)
 TARGET_LINK_LIBRARIES(cube opengl-snippet)
 
-ADD_EXECUTABLE(atlas src/atlas.cc)
-TARGET_LINK_LIBRARIES(atlas opengl-snippet)
+ADD_EXECUTABLE(atlas-projection src/projection.cc)
+TARGET_LINK_LIBRARIES(atlas-projection opengl-snippet)
+
+ADD_EXECUTABLE(atlas-shading src/shading.cc)
+TARGET_LINK_LIBRARIES(atlas-shading opengl-snippet)
 #---------

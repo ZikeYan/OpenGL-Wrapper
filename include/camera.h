@@ -10,6 +10,8 @@
 // TODO: add an assistance class for trajectory
 #include <GL/glew.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include <opencv2/opencv.hpp>
 
 #include "window.h"
@@ -21,7 +23,7 @@ public:
   // Should be coincide with the window
 
   Camera(float fov, int width, int height,
-         float z_near, float z_far);
+         float z_near = 0.1f, float z_far = 100.0f);
   cv::Mat ConvertDepthBuffer(cv::Mat& depthf, float factor);
 
   void set_perspective(float fov, int width, int height,

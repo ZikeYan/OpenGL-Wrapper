@@ -65,8 +65,8 @@ int main() {
   gl::Camera camera(45, window.width(), window.height(),
                     0.1f, 1000.0f);
   camera.SwitchInteraction(true);
-  gl::Program program("../shader/vertex_cube.glsl",
-                      "../shader/fragment_cube.glsl");
+  gl::Program program("../shader/cube_vertex.glsl",
+                      "../shader/cube_fragment.glsl");
   gl::Uniform uniform_mvp(program.id(), "mvp", gl::kMatrix4f);
 
   gl::Args args(3);
