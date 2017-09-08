@@ -60,7 +60,7 @@ cv::Mat Window::CaptureRGB() {
   cv::flip(rgb_, ret, 0);
 
 #ifdef __APPLE__
-  cv::resize(ret, ret, cv::Size(ret.cols/2, ret.rows/2));
+  //cv::resize(ret, ret, cv::Size(ret.cols/2, ret.rows/2));
 #endif
   return ret;
 }

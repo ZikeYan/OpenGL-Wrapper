@@ -50,10 +50,10 @@ void main(){
     vec4 factor = light_color * light_power / (distance * distance);
 	color =
 		// Ambient : simulates indirect lighting
-		ambient_color +
+		0 * ambient_color +
 		// Diffuse : "color" of the object
-		diffuse_color * cos_theta * factor
+		diffuse_color * cos_theta// * factor
 		+
 		// Specular : reflective highlight, like a mirror
-		specular_color * pow(cos_alpha, 5) * factor;
+		0 * specular_color * pow(cos_alpha, 5) * factor;
 }

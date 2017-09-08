@@ -71,5 +71,6 @@ int main() {
   // Close OpenGL window and terminate GLFW
   glfwTerminate();
 
+  cv::imwrite("shading.bmp", pixels);
   return 0;
 }

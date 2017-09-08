@@ -37,9 +37,9 @@ const int kHeight = 480;
 int main() {
   /// Load model and texture
   gl::Model model;
-  model.LoadObj("../obj/beethoven.obj");
+  model.LoadObj("../obj/f16.obj");
   gl::Texture texture;
-  texture.Load("../obj/beethoven.png");
+  texture.Load("../obj/f16.bmp");
 
   // Context and control init
   gl::Window window("F-16", kWidth, kHeight);
@@ -50,6 +50,7 @@ int main() {
 
   gl::Program program("../shader/vntf_vertex.glsl",
                       "../shader/vntf_fragment.glsl");
+
   texture.Init();
   gl::Uniform uniform_mvp(program.id(), "mvp", gl::kMatrix4f);
   gl::Uniform uniform_view(program.id(), "c_T_w", gl::kMatrix4f);
@@ -75,10 +76,12 @@ int main() {
 
   cv::Mat capture;
   gl::Trajectory traj;
-  traj.Load("test.traj");
+  //traj.Load("test.traj");
+  //std::cout << traj.poses().size() << std::endl;
 
   float t = 0;
   int iter = 0;
+  int cnt = 0;
   do {
     // Update control
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -88,9 +91,10 @@ int main() {
     glm::mat4 mvp = camera.mvp();
     glm::mat4 view = camera.view();
     //glm::mat4 view = traj.poses()[iter++];
+    //if (iter > traj.poses().size()) break;
     //glm::mat4 mvp = projection * view * model_mat;
 
-    glm::vec3 light = glm::vec3(0, 20 * cos(t), 20 * sin(t));
+    glm::vec3 light = glm::vec3(0, 6, -1);
     t += 0.01f;
     int tex_idx = 0;
 
@@ -114,7 +118,16 @@ int main() {
 
     glDrawElements(GL_TRIANGLES, model.indices().size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
-    capture = window.CaptureDepth();
+    capture = window.CaptureRGB();
+
+
+    if (window.get_key(GLFW_KEY_ENTER) == GLFW_PRESS) {
+      std::stringstream ss;
+      ss << "Image" << cnt << ".png";
+      cv::imwrite(ss.str(), capture);
+      //traj.poses().push_back(view);
+      cnt ++;
+    }
     window.swap_buffer();
   } while( window.get_key(GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
            window.should_close() == 0 );
@@ -123,8 +136,8 @@ int main() {
 //  cv::imshow("depth", depths);
 //  cv::waitKey(-1);
 //  cv::imwrite("depth.png", depths);
-
   // Close OpenGL window and terminate GLFW
   glfwTerminate();
+  //traj.Save("test.traj");
   return 0;
 }

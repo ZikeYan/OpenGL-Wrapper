@@ -15,6 +15,7 @@ public:
   Texture() = default;
   void Load(std::string texture_path);
   void Init();
+  void Init(GLint internal_format, int width, int height);
 
   explicit
   Texture(std::string texture_path);

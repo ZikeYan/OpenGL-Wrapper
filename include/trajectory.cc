@@ -17,8 +17,8 @@ void Trajectory::Load(std::string path) {
     for (int i = 0; i < 4; ++i) {
       for (int j = 0; j < 4; ++j)
         in >> pose[i][j];
-      poses_.push_back(pose);
     }
+    poses_.push_back(pose);
   }
 }
 
