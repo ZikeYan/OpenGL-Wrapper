@@ -14,15 +14,15 @@
 #include <iostream>
 #include <fstream>
 #include <glm/gtc/matrix_transform.hpp>
-#include "camera.h"
-#include "uniform.h"
-#include "program.h"
+#include "../src/camera.h"
+#include "../src/uniform.h"
+#include "../src/program.h"
 
-#include "window.h"
-#include "texture.h"
-#include "args.h"
-#include "model.h"
-#include "trajectory.h"
+#include "../src/window.h"
+#include "../src/texture.h"
+#include "../src/args.h"
+#include "../src/model.h"
+#include "../src/trajectory.h"
 
 const int kWidth  = 640;
 const int kHeight = 480;
@@ -81,7 +81,6 @@ int main() {
     camera.SetView(window);
 
     /// Bind uniform data
-    glm::mat4 projection = camera.projection();
     glm::mat4 mvp = camera.mvp();
     glm::mat4 view = camera.view();
     glm::vec3 light = glm::vec3(0, 6, -1);

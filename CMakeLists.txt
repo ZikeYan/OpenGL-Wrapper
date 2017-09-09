@@ -67,16 +67,16 @@ TARGET_LINK_LIBRARIES(opengl-snippet
 
 #---------
 # Compile and Link
-ADD_EXECUTABLE(model-demo src/model-demo.cc)
+ADD_EXECUTABLE(model-demo demo/model-demo.cc)
 TARGET_LINK_LIBRARIES(model-demo opengl-snippet)
 
-ADD_EXECUTABLE(cube-demo src/cube-demo.cc)
+ADD_EXECUTABLE(cube-demo demo/cube-demo.cc)
 TARGET_LINK_LIBRARIES(cube-demo opengl-snippet)
 
-ADD_EXECUTABLE(float-texture src/write-texture-demo.cc)
+ADD_EXECUTABLE(float-texture demo/write-texture-demo.cc)
 TARGET_LINK_LIBRARIES(float-texture opengl-snippet)
 
-ADD_EXECUTABLE(atlas-shading src/shading.cc)
+ADD_EXECUTABLE(atlas-shading demo/shading.cc)
 TARGET_LINK_LIBRARIES(atlas-shading opengl-snippet)
 
 

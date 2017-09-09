@@ -8,12 +8,12 @@
 
 #include <opencv2/opencv.hpp>
 
-#include "program.h"
-#include "uniform.h"
-#include "window.h"
-#include "texture.h"
-#include "args.h"
-#include "model.h"
+#include "../src/program.h"
+#include "../src/uniform.h"
+#include "../src/window.h"
+#include "../src/texture.h"
+#include "../src/args.h"
+#include "../src/model.h"
 
 int main() {
   gl::Model model;

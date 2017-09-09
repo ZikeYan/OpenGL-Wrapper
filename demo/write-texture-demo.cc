@@ -8,19 +8,19 @@
 
 #include <opencv2/opencv.hpp>
 #include <utils/shader.h>
-#include "program.h"
-#include "uniform.h"
-#include "camera.h"
+#include "../src/program.h"
+#include "../src/uniform.h"
+#include "../src/camera.h"
 #include <fstream>
-#include "trajectory.h"
+#include "../src/trajectory.h"
 #include "utils/model.h"
 #include "utils/texture.h"
 #include "utils/context.h"
 #include "utils/control.h"
-#include "window.h"
-#include "texture.h"
-#include "args.h"
-#include "model.h"
+#include "../src/window.h"
+#include "../src/texture.h"
+#include "../src/args.h"
+#include "../src/model.h"
 
 int kWidth = 640;
 int kHeight= 480;
