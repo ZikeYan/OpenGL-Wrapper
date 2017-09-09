@@ -25,7 +25,8 @@ private:
   std::string Load(std::string shader_path);
   GLint Compile(const std::string& shader_str, GLuint &shader_id);
   GLint Link(GLuint &program_id,
-             GLuint &vert_shader_id, GLuint &frag_shader_id);
+             GLuint &vert_shader_id,
+             GLuint &frag_shader_id);
 
   GLuint program_id_;
 };

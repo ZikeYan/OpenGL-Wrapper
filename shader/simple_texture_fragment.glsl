@@ -3,8 +3,8 @@
 in vec2 uv;
 out vec4 color;
 
-uniform sampler2D z_buffer;
+uniform sampler2D tex;
 
 void main() {
-    color = texture(z_buffer, uv);
+    color = texture(tex, uv);
 }

@@ -22,12 +22,14 @@ public:
   Camera() = default;
   // Should be coincide with the window
 
-  Camera(float fov, int width, int height,
-         float z_near = 0.1f, float z_far = 100.0f);
+  Camera(int width, int height,
+         float fov = 45.0f,
+         float z_near = 0.1f,
+         float z_far = 100.0f);
   cv::Mat ConvertDepthBuffer(cv::Mat& depthf, float factor);
 
-  void set_perspective(float fov, int width, int height,
-                       float z_near, float z_far) {
+  void set_perspective(int width, int height,
+                       float fov, float z_near, float z_far) {
     z_near_ = z_near;
     z_far_ = z_far;
     projection_ = glm::perspective(fov, (float)width/(float)height,

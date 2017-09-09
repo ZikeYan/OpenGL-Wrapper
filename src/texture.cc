@@ -32,7 +32,8 @@ void Texture::Init() {
   glGenerateMipmap(GL_TEXTURE_2D);
 }
 
-void Texture::Init(GLint internal_format, int width, int height) {
+void Texture::Init(GLint internal_format,
+                   int width, int height) {
   int factor = 1;
 #ifdef __APPLE__
   factor = 2;
@@ -47,6 +48,8 @@ void Texture::Init(GLint internal_format, int width, int height) {
       output_format = GL_RGBA;
       type = GL_FLOAT;
     default:
+      output_format = GL_RGB;
+      type = GL_UNSIGNED_BYTE;
       break;
   }
 

@@ -48,8 +48,8 @@ GLint Program::Compile(const std::string &shader_str, GLuint &shader_id) {
 }
 
 GLint Program::Link(GLuint &program_id,
-                   GLuint &vert_shader_id,
-                   GLuint &frag_shader_id) {
+                    GLuint &vert_shader_id,
+                    GLuint &frag_shader_id) {
   GLint result = GL_FALSE;
   glAttachShader(program_id, vert_shader_id);
   glAttachShader(program_id, frag_shader_id);
@@ -68,7 +68,7 @@ GLint Program::Link(GLuint &program_id,
 }
 
 void Program::Build(std::string vert_shader_path,
-                   std::string frag_shader_path) {
+                    std::string frag_shader_path) {
 
   // Create the shaders
   program_id_ = glCreateProgram();

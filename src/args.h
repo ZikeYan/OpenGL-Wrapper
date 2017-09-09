@@ -26,8 +26,13 @@ public:
   }
 
   // i-th buffer, arg attributes, buffer-size
-  void InitBuffer(GLuint i, ArgAttrib arg_attrib, size_t max_size);
-  void BindBuffer(GLuint i, ArgAttrib arg_attrib, size_t size, void* data);
+  void InitBuffer(GLuint i,
+                  ArgAttrib arg_attrib,
+                  size_t max_size);
+  void BindBuffer(GLuint i,
+                  ArgAttrib arg_attrib,
+                  size_t size,
+                  void* data);
 
 private:
   int argn_;

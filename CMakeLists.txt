@@ -11,23 +11,18 @@ SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -Wall")
 #----------
 # Project variable configurations
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
+SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
+
 SET(OPENGL_SNIPPET_LIBRARIES "")
 SET(OPENGL_SNIPPET_SOURCES
-        include/program.cc
-        include/window.cc
-        include/texture.cc
-        include/args.cc
-        include/uniform.cc
-        include/camera.cc
-        include/trajectory.cc
-        include/model.cc
-        include/gl_objects/vntf_demo.h
-        src/gl_objects/gl_object.cc
-        src/utils/context.cc
-        src/utils/control.cc
-        src/utils/model.cc
-        src/utils/shader.cc
-        src/utils/texture.cc)
+        src/window.cc
+        src/program.cc
+        src/args.cc
+        src/model.cc
+        src/texture.cc
+        src/uniform.cc
+        src/camera.cc
+        src/trajectory.cc)
 #----------
 
 #----------
@@ -72,18 +67,17 @@ TARGET_LINK_LIBRARIES(opengl-snippet
 
 #---------
 # Compile and Link
-ADD_EXECUTABLE(vntf src/vntf.cc)
-TARGET_LINK_LIBRARIES(vntf opengl-snippet)
+ADD_EXECUTABLE(model-demo src/model-demo.cc)
+TARGET_LINK_LIBRARIES(model-demo opengl-snippet)
 
-ADD_EXECUTABLE(cube src/cube.cc)
-TARGET_LINK_LIBRARIES(cube opengl-snippet)
+ADD_EXECUTABLE(cube-demo src/cube-demo.cc)
+TARGET_LINK_LIBRARIES(cube-demo opengl-snippet)
 
-ADD_EXECUTABLE(atlas-projection src/projection.cc)
-TARGET_LINK_LIBRARIES(atlas-projection opengl-snippet)
+ADD_EXECUTABLE(float-texture src/write-texture-demo.cc)
+TARGET_LINK_LIBRARIES(float-texture opengl-snippet)
 
 ADD_EXECUTABLE(atlas-shading src/shading.cc)
 TARGET_LINK_LIBRARIES(atlas-shading opengl-snippet)
 
-ADD_EXECUTABLE(float-texture src/float_texture.cc)
-TARGET_LINK_LIBRARIES(float-texture opengl-snippet)
+
 #---------

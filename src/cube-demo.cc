@@ -11,11 +11,7 @@
 #include <iostream>
 #include <fstream>
 #include <glm/gtc/matrix_transform.hpp>
-#include <uniform.h>
-
-#include "utils/context.h"
-#include "utils/control.h"
-#include "utils/shader.h"
+#include "uniform.h"
 
 #include "program.h"
 #include "args.h"
@@ -60,10 +56,9 @@ static GLubyte vIndices[] = {
 };
 
 int main() {
-  gl::Window window("Test", 640, 480);
+  gl::Window window("Cube", 640, 480);
 
-  gl::Camera camera(45, window.width(), window.height(),
-                    0.1f, 1000.0f);
+  gl::Camera camera(window.width(), window.height());
   camera.SwitchInteraction(true);
   gl::Program program("../shader/cube_vertex.glsl",
                       "../shader/cube_fragment.glsl");

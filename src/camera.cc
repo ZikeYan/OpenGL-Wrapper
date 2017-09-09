@@ -6,9 +6,9 @@
 #include "camera.h"
 
 namespace gl {
-Camera::Camera(float fov, int width, int height,
-               float z_near, float z_far) {
-  set_perspective(fov, width, height, z_near, z_far);
+Camera::Camera(int width, int height,
+               float fov, float z_near, float z_far) {
+  set_perspective(width, height, fov, z_near, z_far);
   view_  = glm::mat4(1.0f);
   model_ = glm::mat4(1.0f);
 }

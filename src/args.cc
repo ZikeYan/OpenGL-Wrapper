@@ -20,8 +20,9 @@ Args::Args(int argn) {
   glGenBuffers(argn, vbos_);
 }
 
-void Args::InitBuffer(GLuint i, ArgAttrib arg_attrib,
-                     size_t max_size) {
+void Args::InitBuffer(GLuint i,
+                      ArgAttrib arg_attrib,
+                      size_t max_size) {
   assert(i < argn_);
   /// Now we have only ELEMENT_BUFFER and ELEMENT_ARRAY_BUFFER
   if (arg_attrib.buffer != GL_ELEMENT_ARRAY_BUFFER) {
@@ -40,8 +41,10 @@ void Args::InitBuffer(GLuint i, ArgAttrib arg_attrib,
   }
 }
 
-void Args::BindBuffer(GLuint i, ArgAttrib arg_attrib,
-                      size_t size, void *data) {
+void Args::BindBuffer(GLuint i,
+                      ArgAttrib arg_attrib,
+                      size_t size,
+                      void *data) {
   assert(i < argn_);
   /// Now we have only ELEMENT_BUFFER and ELEMENT_ARRAY_BUFFER
   if (arg_attrib.buffer != GL_ELEMENT_ARRAY_BUFFER) {

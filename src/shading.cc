@@ -7,13 +7,9 @@
 #include <glm/glm.hpp>
 
 #include <opencv2/opencv.hpp>
-#include <utils/shader.h>
-#include <program.h>
-#include <uniform.h>
-#include "utils/model.h"
-#include "utils/texture.h"
-#include "utils/context.h"
-#include "utils/control.h"
+
+#include "program.h"
+#include "uniform.h"
 #include "window.h"
 #include "texture.h"
 #include "args.h"
@@ -71,6 +67,5 @@ int main() {
   // Close OpenGL window and terminate GLFW
   glfwTerminate();
 
-  cv::imwrite("shading.bmp", pixels);
   return 0;
 }

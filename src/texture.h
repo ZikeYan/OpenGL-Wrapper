@@ -14,8 +14,12 @@ class Texture {
 public:
   Texture() = default;
   void Load(std::string texture_path);
+
+  /// Init for reading
   void Init();
-  void Init(GLint internal_format, int width, int height);
+  /// Init for writing. Note differences in filtering
+  void Init(GLint internal_format,
+            int width, int height);
 
   explicit
   Texture(std::string texture_path);
