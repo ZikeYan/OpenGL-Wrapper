@@ -2,21 +2,18 @@
 // Created by Neo on 24/08/2017.
 //
 
+#include <fstream>
+
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 
 #include <opencv2/opencv.hpp>
-#include <utils/shader.h>
+
 #include "../src/program.h"
 #include "../src/uniform.h"
 #include "../src/camera.h"
-#include <fstream>
 #include "../src/trajectory.h"
-#include "utils/model.h"
-#include "utils/texture.h"
-#include "utils/context.h"
-#include "utils/control.h"
 #include "../src/window.h"
 #include "../src/texture.h"
 #include "../src/args.h"

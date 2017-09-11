@@ -90,7 +90,7 @@ cv::Mat Camera::ConvertDepthBuffer(cv::Mat& depthf, float factor) {
   for (int i = 0; i < depthf.rows; ++i) {
     for (int j = 0; j < depthf.cols; ++j) {
       float z = depthf.at<float>(i, j);
-      if (isnan(z) || isinf(z)) {
+      if (std::isnan(z) || std::isinf(z)) {
         depths.at<unsigned short>(i, j) = 0;
       } else {
         float clip_z = 2 * z - 1; // [0,1] -> [-1,1]
