@@ -13,10 +13,11 @@ namespace gl {
 class Model {
 public:
   Model() = default;
-  void LoadObj(std::string path);
 
   explicit
   Model(std::string path);
+
+  void LoadObj(std::string path);
 
   std::vector<glm::vec3>& positions() {
     return positions_;

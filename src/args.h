@@ -10,6 +10,7 @@
 #include <GL/glew.h>
 
 namespace gl {
+
 struct ArgAttrib {
   GLuint buffer; // ARRAY_BUFFER, ELEMENT_ARRAY_BUFFER
   GLint  size;   // sizeof(float),
@@ -21,10 +22,12 @@ class Args {
 public:
   explicit
   Args(int argn);
+
+  ~Args();
+
   const GLuint vao() const {
     return vao_;
   }
-
   // i-th buffer, arg attributes, buffer-size
   void InitBuffer(GLuint i,
                   ArgAttrib arg_attrib,

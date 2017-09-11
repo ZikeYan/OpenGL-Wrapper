@@ -6,6 +6,12 @@
 #include <iostream>
 
 namespace gl {
+Uniform::Uniform(GLuint program, std::string name,
+                 UniformType type) {
+  GetLocation(program, name);
+  set_type(type);
+}
+
 void Uniform::GetLocation(GLuint program,
                           std::string name) {
   GLint uniform_id = glGetUniformLocation(program, name.c_str());
@@ -16,17 +22,18 @@ void Uniform::GetLocation(GLuint program,
   uniform_id_ = (GLuint)uniform_id;
 }
 
-Uniform::Uniform(GLuint program, std::string name,
-                 UniformType type) {
-  GetLocation(program, name);
-  set_type(type);
-}
-
-void Uniform::Bind(void *data) {
+/// Override specially designed for texture
+void Uniform::Bind(GLuint id) {
   switch (type_) {
     case kTexture2D:
-      glUniform1i(uniform_id_, *((int*)data));
+      glUniform1i(uniform_id_, id);
       break;
+    default:
+      break;
+  }
+}
+void Uniform::Bind(void *data) {
+  switch (type_) {
     case kMatrix4f:
       glUniformMatrix4fv(uniform_id_, 1, GL_FALSE, (float*)data);
       break;

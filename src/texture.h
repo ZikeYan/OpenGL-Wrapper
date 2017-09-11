@@ -13,6 +13,12 @@ namespace gl {
 class Texture {
 public:
   Texture() = default;
+
+  explicit
+  Texture(std::string texture_path);
+
+  ~Texture();
+
   void Load(std::string texture_path);
 
   /// Init for reading
@@ -21,8 +27,6 @@ public:
   void Init(GLint internal_format,
             int width, int height);
 
-  explicit
-  Texture(std::string texture_path);
 
   void Bind(int texture_idx);
 
@@ -42,6 +46,8 @@ private:
   int width_;
   int height_;
   GLuint texture_id_;
+
+  bool texture_gened_ = false;
 };
 }
 

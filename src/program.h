@@ -12,9 +12,9 @@ class Program {
 public:
   Program() = default;
   Program(std::string vert_shader_path,
-          std::string frag_shader_path) {
-    Build(vert_shader_path, frag_shader_path);
-  }
+          std::string frag_shader_path);
+  ~Program();
+
   void Build(std::string vert_shader_path,
              std::string frag_shader_path);
   const GLuint id() const {
@@ -28,6 +28,7 @@ private:
              GLuint &vert_shader_id,
              GLuint &frag_shader_id);
 
+  bool program_built_ = false;
   GLuint program_id_;
 };
 }

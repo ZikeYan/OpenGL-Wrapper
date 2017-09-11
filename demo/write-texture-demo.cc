@@ -132,8 +132,7 @@ int main() {
     glUseProgram(program2.id());
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, write_texture.id());
-    int tex1_idx = 0;
-    uniform2_tex.Bind(&tex1_idx);
+    uniform2_tex.Bind(GLuint(0));
     glBindVertexArray(args2.vao());
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);

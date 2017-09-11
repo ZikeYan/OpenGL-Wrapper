@@ -89,8 +89,7 @@ int main() {
     texture.Bind(0);
     uniform_mvp.Bind(&mvp[0][0]);
     uniform_view.Bind(&view[0][0]);
-    int tex_idx = 0;
-    uniform_tex.Bind(&tex_idx);
+    uniform_tex.Bind(GLuint(0));
     uniform_light.Bind(&light);
 
     /// Bind vertex data

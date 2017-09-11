@@ -26,6 +26,7 @@ public:
          float fov = 45.0f,
          float z_near = 0.1f,
          float z_far = 100.0f);
+
   cv::Mat ConvertDepthBuffer(cv::Mat& depthf, float factor);
 
   void set_perspective(int width, int height,

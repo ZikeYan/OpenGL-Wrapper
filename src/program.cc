@@ -12,6 +12,18 @@
 #include <GL/glew.h>
 
 namespace gl {
+Program::Program(std::string vert_shader_path,
+                 std::string frag_shader_path) {
+  Build(vert_shader_path, frag_shader_path);
+  program_built_ = true;
+}
+
+Program::~Program() {
+  if (program_built_) {
+    glDeleteProgram(program_id_);
+  }
+}
+
 std::string Program::Load(std::string shader_path) {
   std::string shader_str = "";
   std::ifstream shader_stream(shader_path, std::ios::in);
@@ -106,5 +118,7 @@ void Program::Build(std::string vert_shader_path,
   glDeleteShader(frag_shader_id);
 
   std::cout << "Success." << std::endl;
+
+  program_built_ = true;
 }
 }

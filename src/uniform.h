@@ -18,16 +18,18 @@ enum UniformType {
 class Uniform {
 public:
   Uniform() = default;
+  explicit
+  Uniform(GLuint program,
+          std::string name,
+          UniformType type);
+
   void GetLocation(GLuint program,
                    std::string name);
   void set_type(UniformType type) {
     type_ = type;
   }
 
-  explicit
-  Uniform(GLuint program, std::string name,
-          UniformType type);
-
+  void Bind(GLuint id);
   void Bind(void *data);
 
   const GLuint id() const {

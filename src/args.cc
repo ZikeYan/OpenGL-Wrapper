@@ -16,8 +16,13 @@ Args::Args(int argn) {
   glGenVertexArrays(1, &vao_);
   glBindVertexArray(vao_);
 
-  vbos_ = new GLuint[argn];
-  glGenBuffers(argn, vbos_);
+  vbos_ = new GLuint[argn_];
+  glGenBuffers(argn_, vbos_);
+}
+
+Args::~Args() {
+  glDeleteBuffers(argn_, vbos_);
+  glDeleteVertexArrays(1, &vao_);
 }
 
 void Args::InitBuffer(GLuint i,
