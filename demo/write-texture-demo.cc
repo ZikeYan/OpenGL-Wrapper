@@ -11,7 +11,7 @@
 #include <opencv2/opencv.hpp>
 
 #include "../src/program.h"
-#include "../src/uniform.h"
+#include "../src/uniforms.h"
 #include "../src/camera.h"
 #include "../src/trajectory.h"
 #include "../src/window.h"
@@ -45,7 +45,8 @@ int main() {
   gl::Program program1("../shader/write_texture_vertex.glsl",
                        "../shader/write_texture_fragment.glsl");
   gl::Texture read_texture("../obj/f16.bmp");
-  gl::Uniform uniform1_mvp(program1.id(), "mvp", gl::kMatrix4f);
+  gl::Uniforms uniforms1;
+  uniforms1.GetLocation(program1.id(), "mvp", gl::kMatrix4f);
   gl::Args args1(3);
   args1.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
                    model.positions().size(), model.positions().data());
@@ -57,7 +58,8 @@ int main() {
 
   gl::Program program2("../shader/simple_texture_vertex.glsl",
                        "../shader/simple_texture_fragment.glsl");
-  gl::Uniform uniform2_tex(program2.id(), "tex", gl::kTexture2D);
+  gl::Uniforms uniforms2;
+  uniforms2.GetLocation(program2.id(), "tex", gl::kTexture2D);
   gl::Args args2(2);
   args2.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
                    6, (void*)kVertices);
@@ -120,7 +122,7 @@ int main() {
     /// Choose shader
     glUseProgram(program1.id());
     read_texture.Bind(0);
-    uniform1_mvp.Bind(&mvp);
+    uniforms1.Bind("mvp", &mvp, 1);
     glBindVertexArray(args1.vao());
     glDrawElements(GL_TRIANGLES, model.indices().size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
@@ -132,7 +134,7 @@ int main() {
     glUseProgram(program2.id());
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, write_texture.id());
-    uniform2_tex.Bind(GLuint(0));
+    uniforms2.Bind("tex", GLuint(0));
     glBindVertexArray(args2.vao());
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);

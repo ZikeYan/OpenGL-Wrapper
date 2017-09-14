@@ -20,7 +20,7 @@ SET(OPENGL_SNIPPET_SOURCES
         src/args.cc
         src/model.cc
         src/texture.cc
-        src/uniform.cc
+        src/uniforms.cc
         src/camera.cc
         src/trajectory.cc)
 #----------

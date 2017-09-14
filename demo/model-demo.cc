@@ -15,7 +15,7 @@
 #include <fstream>
 #include <glm/gtc/matrix_transform.hpp>
 #include "../src/camera.h"
-#include "../src/uniform.h"
+#include "../src/uniforms.h"
 #include "../src/program.h"
 
 #include "../src/window.h"
@@ -46,10 +46,11 @@ int main() {
                       "../shader/model_fragment.glsl");
 
   texture.Init();
-  gl::Uniform uniform_mvp(program.id(), "mvp", gl::kMatrix4f);
-  gl::Uniform uniform_view(program.id(), "c_T_w", gl::kMatrix4f);
-  gl::Uniform uniform_tex(program.id(), "texture_sampler", gl::kTexture2D);
-  gl::Uniform uniform_light(program.id(), "light", gl::kVector3f);
+  gl::Uniforms uniforms;
+  uniforms.GetLocation(program.id(), "mvp", gl::kMatrix4f);
+  uniforms.GetLocation(program.id(), "c_T_w", gl::kMatrix4f);
+  uniforms.GetLocation(program.id(), "texture_sampler", gl::kTexture2D);
+  uniforms.GetLocation(program.id(), "light", gl::kVector3f);
 
   gl::Args args(4);
   args.InitBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
@@ -83,14 +84,15 @@ int main() {
     /// Bind uniform data
     glm::mat4 mvp = camera.mvp();
     glm::mat4 view = camera.view();
-    glm::vec3 light = glm::vec3(0, 6, -1);
-
+    std::vector<glm::vec3> lights = {
+        glm::vec3(0, 3, 0), glm::vec3(0, -3, 0), glm::vec3(-3, 3, 1)
+    };
     glUseProgram(program.id());
     texture.Bind(0);
-    uniform_mvp.Bind(&mvp[0][0]);
-    uniform_view.Bind(&view[0][0]);
-    uniform_tex.Bind(GLuint(0));
-    uniform_light.Bind(&light);
+    uniforms.Bind("mvp", &mvp, 1);
+    uniforms.Bind("c_T_w", &view, 1);
+    uniforms.Bind("texture_sampler", GLuint(0));
+    uniforms.Bind("light", lights.data(), lights.size());
 
     /// Bind vertex data
     glBindVertexArray(args.vao());

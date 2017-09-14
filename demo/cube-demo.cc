@@ -11,7 +11,7 @@
 #include <iostream>
 #include <fstream>
 #include <glm/gtc/matrix_transform.hpp>
-#include "../src/uniform.h"
+#include "../src/uniforms.h"
 
 #include "../src/program.h"
 #include "../src/args.h"
@@ -62,7 +62,8 @@ int main() {
   camera.SwitchInteraction(true);
   gl::Program program("../shader/cube_vertex.glsl",
                       "../shader/cube_fragment.glsl");
-  gl::Uniform uniform_mvp(program.id(), "mvp", gl::kMatrix4f);
+  gl::Uniforms uniforms;
+  uniforms.GetLocation(program.id(), "mvp", gl::kMatrix4f);
 
   gl::Args args(3);
   args.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
@@ -90,7 +91,7 @@ int main() {
     glm::mat4 mvp = camera.mvp();
 
     glUseProgram(program.id());
-    uniform_mvp.Bind(&mvp);
+    uniforms.Bind("mvp", &mvp, 1);
     glBindVertexArray(args.vao());
     glDrawElements(GL_TRIANGLES, sizeof(vIndices) / sizeof(vIndices[0]),
                    GL_UNSIGNED_BYTE, 0);

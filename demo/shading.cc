@@ -9,7 +9,7 @@
 #include <opencv2/opencv.hpp>
 
 #include "../src/program.h"
-#include "../src/uniform.h"
+#include "../src/uniforms.h"
 #include "../src/window.h"
 #include "../src/texture.h"
 #include "../src/args.h"
@@ -28,7 +28,8 @@ int main() {
 
   gl::Program program("../shader/shading_vertex.glsl",
                       "../shader/shading_fragment.glsl");
-  gl::Uniform uniform_light(program.id(), "light", gl::kVector3f);
+  gl::Uniforms uniforms;
+  uniforms.GetLocation(program.id(), "light", gl::kVector3f);
   gl::Args args(4);
   args.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 2, GL_FLOAT},
                   model.uvs().size(), model.uvs().data());
@@ -55,7 +56,7 @@ int main() {
     glUseProgram(program.id());
 
     glm::vec3 light(2, 4, 2);
-    uniform_light.Bind(&light);
+    uniforms.Bind("light", &light, 1);
     glBindVertexArray(args.vao());
     glDrawElements(GL_TRIANGLES, model.indices().size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
