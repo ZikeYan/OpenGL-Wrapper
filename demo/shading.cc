@@ -17,10 +17,10 @@
 
 int main() {
   gl::Model model;
-  model.LoadObj("../obj/f16.obj");
+  model.LoadObj("../obj/beethoven.obj");
 
   gl::Texture texture;
-  texture.Load("../obj/f16.bmp");
+  texture.Load("../obj/beethoven.png");
 
   // Context and control init
   gl::Window window("F-16", texture.width()/2, texture.height()/2);

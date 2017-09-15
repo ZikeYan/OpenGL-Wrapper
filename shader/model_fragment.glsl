@@ -1,6 +1,6 @@
 #version 330 core
 
-#define LIGHT_COUNT 3
+#define LIGHT_COUNT 6
 
 // Interpolated values from the vertex shaders
 in vec2 uv;
@@ -16,7 +16,7 @@ out vec4 color;
 uniform sampler2D texture_sampler;
 
 void main(){
-	float light_power = 10.0f;
+	float light_power = 80.0f;
 	vec4 light_color = vec4(1, 1, 1, 1);
 	vec4 diffuse_color = texture(texture_sampler, uv).rgba;
 	vec4 ambient_color  = vec4(0.2, 0.2, 0.2, 1) * diffuse_color;

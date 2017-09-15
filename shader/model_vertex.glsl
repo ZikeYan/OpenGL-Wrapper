@@ -1,6 +1,6 @@
 #version 330 core
 
-#define LIGHT_COUNT 3
+#define LIGHT_COUNT 6
 
 layout(location = 0) in vec3 in_position;
 layout(location = 1) in vec3 in_normal;

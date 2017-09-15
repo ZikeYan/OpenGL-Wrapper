@@ -30,9 +30,9 @@ const int kHeight = 480;
 int main() {
   /// Load model and texture
   gl::Model model;
-  model.LoadObj("../obj/f16.obj");
+  model.LoadObj("../obj/beethoven.obj");
   gl::Texture texture;
-  texture.Load("../obj/f16.bmp");
+  texture.Load("../obj/beethoven.png");
 
   // Context and control init
   gl::Window window("F-16", kWidth, kHeight);
@@ -85,7 +85,12 @@ int main() {
     glm::mat4 mvp = camera.mvp();
     glm::mat4 view = camera.view();
     std::vector<glm::vec3> lights = {
-        glm::vec3(0, 3, 0), glm::vec3(0, -3, 0), glm::vec3(-3, 3, 1)
+        glm::vec3(0, 0, 20),
+        glm::vec3(0, 0, -20),
+        glm::vec3(0, 10, 0),
+        glm::vec3(0, -10, 0),
+        glm::vec3(-10, 0, 0),
+        glm::vec3(10, 0, 0)
     };
     glUseProgram(program.id());
     texture.Bind(0);

@@ -32,10 +32,8 @@ static const GLfloat kVertices[] = {
 };
 
 int main() {
-
-
   gl::Model model;
-  model.LoadObj("../obj/f16.obj");
+  model.LoadObj("../obj/beethoven.obj");
 
   // Context and control init
   gl::Window window("F-16", kWidth, kHeight);
@@ -44,7 +42,7 @@ int main() {
 
   gl::Program program1("../shader/write_texture_vertex.glsl",
                        "../shader/write_texture_fragment.glsl");
-  gl::Texture read_texture("../obj/f16.bmp");
+  gl::Texture read_texture("../obj/beethoven.png");
   gl::Uniforms uniforms1;
   uniforms1.GetLocation(program1.id(), "mvp", gl::kMatrix4f);
   gl::Args args1(3);
@@ -108,6 +106,9 @@ int main() {
   cv::Mat pixel = cv::Mat(write_texture.height(),
                           write_texture.width(),
                           CV_32FC4);
+
+  cv::Mat texmat = cv::imread("../obj/beethoven.png");
+
   do {
     // Control
     camera.SetView(window);
@@ -144,13 +145,21 @@ int main() {
       cv::flip(pixel, pixel, 0);
 
       std::ofstream out("map.txt");
-      for (int i = 0; i < pixel.rows; ++i)
+      cv::Mat show = cv::Mat(kHeight * 2, kWidth * 2, CV_8UC3);
+      for (int i = 0; i < pixel.rows; ++i) {
         for (int j = 0; j < pixel.cols; ++j) {
           cv::Vec4f v = pixel.at<cv::Vec4f>(i, j);
-          if (v[0] != 0 || v[1] != 0)
+          if (v[0] != 0 || v[1] != 0) {
             out << i << " " << j << " "
                 << v[0] << " " << v[1] << std::endl;
+//            show.at<cv::Vec3b>(i, j)
+//                = texmat.at<cv::Vec3b>(texmat.rows * (1 - v[1]),
+//                                       texmat.cols * v[0]);
+          }
         }
+      }
+//      cv::imshow("show", show);
+//      cv::waitKey(20);
     }
 
     window.swap_buffer();
