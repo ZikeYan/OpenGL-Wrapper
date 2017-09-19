@@ -53,6 +53,22 @@ Window::Window(std::string window_name, int width, int height) {
   depth_ = cv::Mat(img_height_, img_width_, CV_32F);
 }
 
+void Window::Resize(int width, int height) {
+  width_ = width;
+  height_ = height;
+  glfwSetWindowSize(window_, width, height);
+
+  int res_factor = 1;
+#ifdef __APPLE__
+  res_factor = 2;
+#endif
+  img_width_  = res_factor * width_;
+  img_height_ = res_factor * height_;
+  rgb_   = cv::Mat(img_height_, img_width_, CV_8UC3);
+  rgba_  = cv::Mat(img_height_, img_width_, CV_8UC4);
+  depth_ = cv::Mat(img_height_, img_width_, CV_32F);
+}
+
 cv::Mat Window::CaptureRGB() {
   glReadPixels(0, 0, img_width_, img_height_,
                GL_BGR, GL_UNSIGNED_BYTE, rgb_.data);

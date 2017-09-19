@@ -12,19 +12,13 @@
 #include <GL/glew.h>
 
 namespace gl {
-Program::Program(std::string vert_shader_path,
-                 std::string frag_shader_path) {
-  Build(vert_shader_path, frag_shader_path);
-  program_built_ = true;
-}
-
 Program::~Program() {
   if (program_built_) {
     glDeleteProgram(program_id_);
   }
 }
 
-std::string Program::Load(std::string shader_path) {
+void Program::Load(std::string shader_path, ShaderType type) {
   std::string shader_str = "";
   std::ifstream shader_stream(shader_path, std::ios::in);
   if (shader_stream.is_open()) {
@@ -36,10 +30,27 @@ std::string Program::Load(std::string shader_path) {
     std::cerr << "Invalid path: " << shader_path << std::endl;
     exit(1);
   }
-  return shader_str;
+
+  switch (type) {
+    case kVertexShader:
+      vert_shader_path_ = shader_path;
+      vert_shader_str_ = shader_str;
+      break;
+
+    case kFragmentShader:
+      frag_shader_path_ = shader_path;
+      frag_shader_str_ = shader_str;
+      break;
+
+    default:
+      /// Should never reach here
+      std::cout << "Invalid shader type !" << std::endl;
+      exit(1);
+  }
 }
 
-GLint Program::Compile(const std::string &shader_str, GLuint &shader_id) {
+GLint Program::Compile(const std::string &shader_str,
+                       GLuint &shader_id) {
   GLint result = GL_FALSE;
 
   GLchar const *shader_cstr[] = {shader_str.c_str()};
@@ -79,26 +90,22 @@ GLint Program::Link(GLuint &program_id,
   return result;
 }
 
-void Program::Build(std::string vert_shader_path,
-                    std::string frag_shader_path) {
-
+void Program::Build() {
   // Create the shaders
   program_id_ = glCreateProgram();
   GLuint vert_shader_id = glCreateShader(GL_VERTEX_SHADER);
   GLuint frag_shader_id = glCreateShader(GL_FRAGMENT_SHADER);
 
   GLint compile_result;
-  std::cout << "Compiling vertex shader: " << vert_shader_path << std::endl;
-  std::string vert_shader_str = Load(vert_shader_path);
-  compile_result = Compile(vert_shader_str, vert_shader_id);
+  std::cout << "Compiling vertex shader: " << vert_shader_path_ << std::endl;
+  compile_result = Compile(vert_shader_str_, vert_shader_id);
   if (GL_FALSE == compile_result) {
     std::cerr << "Compile error, abort." << std::endl;
     exit(1);
   }
 
-  std::cout << "Compiling fragment shader: " << frag_shader_path << std::endl;
-  std::string frag_shader_src = Load(frag_shader_path);
-  compile_result = Compile(frag_shader_src, frag_shader_id);
+  std::cout << "Compiling fragment shader: " << frag_shader_path_ << std::endl;
+  compile_result = Compile(frag_shader_str_, frag_shader_id);
   if (GL_FALSE == compile_result) {
     std::cerr << "Compile error, abort." << std::endl;
     exit(1);

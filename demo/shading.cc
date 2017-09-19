@@ -24,10 +24,13 @@ int main() {
 
   // Context and control init
   gl::Window window("F-16", texture.width()/2, texture.height()/2);
-  texture.Init();
+  texture.Init("../obj/beethoven.png");
 
-  gl::Program program("../shader/shading_vertex.glsl",
-                      "../shader/shading_fragment.glsl");
+  gl::Program program;
+  program.Load("../shader/shading_vertex.glsl", gl::kVertexShader);
+  program.Load("../shader/shading_fragment.glsl", gl::kFragmentShader);
+  program.Build();
+
   gl::Uniforms uniforms;
   uniforms.GetLocation(program.id(), "light", gl::kVector3f);
   gl::Args args(4);

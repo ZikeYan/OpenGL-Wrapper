@@ -19,6 +19,8 @@
 namespace gl {
 class Camera {
 public:
+  /// Camera c = Camera(); c.set_perspective( ... )
+  /// or Camera c = Camera( ... )
   Camera() = default;
   // Should be coincide with the window
 
@@ -42,7 +44,7 @@ public:
   }
   // ... Or set it with interactions (long version)
   void SwitchInteraction(bool enable_interaction);
-  void SetView(Window &window);
+  void UpdateView(Window &window);
 
   void set_model(glm::mat4 model) {
     model_ = model;

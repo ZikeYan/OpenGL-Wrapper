@@ -39,6 +39,7 @@ public:
   const int height() const {
     return height_;
   }
+  void Resize(int width, int height);
 
   /// Screenshot utilities
   cv::Mat CaptureRGB();

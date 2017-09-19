@@ -40,9 +40,13 @@ int main() {
   gl::Camera camera(window.width(), window.height());
   camera.SwitchInteraction(true);
 
-  gl::Program program1("../shader/write_texture_vertex.glsl",
-                       "../shader/write_texture_fragment.glsl");
-  gl::Texture read_texture("../obj/beethoven.png");
+  gl::Program program1;
+  program1.Load("../shader/write_texture_vertex.glsl", gl::kVertexShader);
+  program1.Load("../shader/write_texture_fragment.glsl", gl::kFragmentShader);
+  program1.Build();
+
+  gl::Texture read_texture;
+  read_texture.Init("../obj/beethoven.png");
   gl::Uniforms uniforms1;
   uniforms1.GetLocation(program1.id(), "mvp", gl::kMatrix4f);
   gl::Args args1(3);
@@ -54,8 +58,11 @@ int main() {
                        1, GL_UNSIGNED_INT},
                    model.indices().size(), model.indices().data());
 
-  gl::Program program2("../shader/simple_texture_vertex.glsl",
-                       "../shader/simple_texture_fragment.glsl");
+  gl::Program program2;
+  program2.Load("../shader/simple_texture_vertex.glsl", gl::kVertexShader);
+  program2.Load("../shader/simple_texture_fragment.glsl", gl::kFragmentShader);
+  program2.Build();
+
   gl::Uniforms uniforms2;
   uniforms2.GetLocation(program2.id(), "tex", gl::kTexture2D);
   gl::Args args2(2);
@@ -111,7 +118,7 @@ int main() {
 
   do {
     // Control
-    camera.SetView(window);
+    camera.UpdateView(window);
     glm::mat4 mvp = camera.mvp();
     glm::mat4 view = camera.view();
 

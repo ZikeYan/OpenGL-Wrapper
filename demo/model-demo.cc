@@ -28,11 +28,18 @@ const int kWidth  = 640;
 const int kHeight = 480;
 
 int main() {
+  std::vector<glm::vec3> lights = {
+      glm::vec3(0, 0, 20),
+      glm::vec3(0, 0, -20),
+      glm::vec3(0, 10, 0),
+      glm::vec3(0, -10, 0),
+      glm::vec3(-10, 0, 0),
+      glm::vec3(10, 0, 0)
+  };
+
   /// Load model and texture
   gl::Model model;
   model.LoadObj("../obj/beethoven.obj");
-  gl::Texture texture;
-  texture.Load("../obj/beethoven.png");
 
   // Context and control init
   gl::Window window("F-16", kWidth, kHeight);
@@ -42,10 +49,15 @@ int main() {
   glm::mat4 model_mat = glm::mat4(1.0f);
   camera.set_model(model_mat);
 
-  gl::Program program("../shader/model_vertex.glsl",
-                      "../shader/model_fragment.glsl");
+  gl::Program program;
+  program.Load("../shader/multi_light_model_vertex.glsl",
+               gl::kVertexShader);
+  program.Load("../shader/multi_light_model_fragment.glsl",
+               gl::kFragmentShader);
+  program.Build();
 
-  texture.Init();
+  gl::Texture texture;
+  texture.Init("../obj/beethoven.png");
   gl::Uniforms uniforms;
   uniforms.GetLocation(program.id(), "mvp", gl::kMatrix4f);
   uniforms.GetLocation(program.id(), "c_T_w", gl::kMatrix4f);
@@ -79,19 +91,12 @@ int main() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     /// Update viewpoint
-    camera.SetView(window);
+    camera.UpdateView(window);
 
     /// Bind uniform data
     glm::mat4 mvp = camera.mvp();
     glm::mat4 view = camera.view();
-    std::vector<glm::vec3> lights = {
-        glm::vec3(0, 0, 20),
-        glm::vec3(0, 0, -20),
-        glm::vec3(0, 10, 0),
-        glm::vec3(0, -10, 0),
-        glm::vec3(-10, 0, 0),
-        glm::vec3(10, 0, 0)
-    };
+
     glUseProgram(program.id());
     texture.Bind(0);
     uniforms.Bind("mvp", &mvp, 1);

@@ -60,8 +60,11 @@ int main() {
 
   gl::Camera camera(window.width(), window.height());
   camera.SwitchInteraction(true);
-  gl::Program program("../shader/cube_vertex.glsl",
-                      "../shader/cube_fragment.glsl");
+  gl::Program program;
+  program.Load("../shader/cube_vertex.glsl", gl::kVertexShader);
+  program.Load("../shader/cube_fragment.glsl", gl::kFragmentShader);
+  program.Build();
+
   gl::Uniforms uniforms;
   uniforms.GetLocation(program.id(), "mvp", gl::kMatrix4f);
 
@@ -87,7 +90,7 @@ int main() {
     // Clear the screen
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    camera.SetView(window);
+    camera.UpdateView(window);
     glm::mat4 mvp = camera.mvp();
 
     glUseProgram(program.id());
