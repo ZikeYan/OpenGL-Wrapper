@@ -8,9 +8,11 @@
 #include <string>
 #include <GL/glew.h>
 namespace gl {
+
+const int kShaderTypes = 2;
 enum ShaderType {
-  kVertexShader,
-  kFragmentShader
+  kVertexShader = 0,
+  kFragmentShader = 1,
 };
 
 class Program {
@@ -20,6 +22,13 @@ public:
   ~Program();
 
   void Load(std::string shader_path, ShaderType type);
+
+  /// Beta function:
+  /// Specifically replace the 1st:
+  /// #define MACRO 0 => #define MACRO value
+  void ReplaceMacro(std::string name, std::string value,
+                    ShaderType type);
+
   void Build();
 
   const GLuint id() const {
@@ -27,11 +36,8 @@ public:
   }
 
 private:
-  std::string vert_shader_path_;
-  std::string vert_shader_str_;
-
-  std::string frag_shader_path_;
-  std::string frag_shader_str_;
+  std::string shader_path_[kShaderTypes];
+  std::string shader_str_[kShaderTypes];
 
   GLint Compile(const std::string& shader_str, GLuint &shader_id);
   GLint Link(GLuint &program_id,

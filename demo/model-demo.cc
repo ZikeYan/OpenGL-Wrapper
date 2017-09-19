@@ -36,6 +36,8 @@ int main() {
       glm::vec3(-10, 0, 0),
       glm::vec3(10, 0, 0)
   };
+  std::stringstream ss;
+  ss << lights.size();
 
   /// Load model and texture
   gl::Model model;
@@ -52,8 +54,11 @@ int main() {
   gl::Program program;
   program.Load("../shader/multi_light_model_vertex.glsl",
                gl::kVertexShader);
+  program.ReplaceMacro("LIGHT_COUNT", ss.str(), gl::kVertexShader);
+
   program.Load("../shader/multi_light_model_fragment.glsl",
                gl::kFragmentShader);
+  program.ReplaceMacro("LIGHT_COUNT", ss.str(), gl::kFragmentShader);
   program.Build();
 
   gl::Texture texture;

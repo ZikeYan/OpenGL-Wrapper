@@ -1,6 +1,6 @@
 #version 330 core
 
-#define LIGHT_COUNT 6
+#define LIGHT_COUNT 1
 
 // Interpolated values from the vertex shaders
 in vec2 uv;

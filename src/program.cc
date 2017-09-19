@@ -10,6 +10,7 @@
 #include <vector>
 
 #include <GL/glew.h>
+#include <sstream>
 
 namespace gl {
 Program::~Program() {
@@ -31,22 +32,19 @@ void Program::Load(std::string shader_path, ShaderType type) {
     exit(1);
   }
 
-  switch (type) {
-    case kVertexShader:
-      vert_shader_path_ = shader_path;
-      vert_shader_str_ = shader_str;
-      break;
+  shader_path_[type] = shader_path;
+  shader_str_[type] = shader_str;
+}
 
-    case kFragmentShader:
-      frag_shader_path_ = shader_path;
-      frag_shader_str_ = shader_str;
-      break;
-
-    default:
-      /// Should never reach here
-      std::cout << "Invalid shader type !" << std::endl;
-      exit(1);
+void Program::ReplaceMacro(std::string name, std::string value,
+                           ShaderType type) {
+  size_t pos = shader_str_[type].find(name);
+  if (pos == std::string::npos) {
+    std::cerr << "Macro " << name << " not found!" << std::endl;
+    return;
   }
+
+  shader_str_[type].replace(pos + name.size() + 1, 1, value);
 }
 
 GLint Program::Compile(const std::string &shader_str,
@@ -97,15 +95,17 @@ void Program::Build() {
   GLuint frag_shader_id = glCreateShader(GL_FRAGMENT_SHADER);
 
   GLint compile_result;
-  std::cout << "Compiling vertex shader: " << vert_shader_path_ << std::endl;
-  compile_result = Compile(vert_shader_str_, vert_shader_id);
+  std::cout << "Compiling vertex shader: "
+            << shader_path_[kVertexShader] << std::endl;
+  compile_result = Compile(shader_str_[kVertexShader], vert_shader_id);
   if (GL_FALSE == compile_result) {
     std::cerr << "Compile error, abort." << std::endl;
     exit(1);
   }
 
-  std::cout << "Compiling fragment shader: " << frag_shader_path_ << std::endl;
-  compile_result = Compile(frag_shader_str_, frag_shader_id);
+  std::cout << "Compiling fragment shader: "
+            << shader_path_[kFragmentShader] << std::endl;
+  compile_result = Compile(shader_str_[kFragmentShader], frag_shader_id);
   if (GL_FALSE == compile_result) {
     std::cerr << "Compile error, abort." << std::endl;
     exit(1);
