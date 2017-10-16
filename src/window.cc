@@ -7,6 +7,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace gl {
+/// If use macOS, open a 0.5x window
 Window::Window(std::string window_name, int width, int height) {
   // Initialise GLFW
   if (!glfwInit()) {
@@ -75,9 +76,6 @@ cv::Mat Window::CaptureRGB() {
   cv::Mat ret;
   cv::flip(rgb_, ret, 0);
 
-#ifdef __APPLE__
-  //cv::resize(ret, ret, cv::Size(ret.cols/2, ret.rows/2));
-#endif
   return ret;
 }
 
@@ -87,9 +85,6 @@ cv::Mat Window::CaptureRGBA() {
   cv::Mat ret;
   cv::flip(rgba_, ret, 0);
 
-#ifdef __APPLE__
-  cv::resize(ret, ret, cv::Size(ret.cols/2, ret.rows/2));
-#endif
   return ret;
 }
 
@@ -99,9 +94,7 @@ cv::Mat Window::CaptureDepth() {
                GL_DEPTH_COMPONENT, GL_FLOAT, depth_.data);
   cv::Mat ret;
   cv::flip(depth_, ret, 0);
-#ifdef __APPLE__
-  cv::resize(ret, ret, cv::Size(ret.cols/2, ret.rows/2), CV_INTER_NN);
-#endif
+
   return ret;
 }
 }

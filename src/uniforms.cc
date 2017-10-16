@@ -18,7 +18,7 @@ void Uniforms::GetLocation(GLuint program,
   uniform_ids_[name] = std::make_pair((GLuint)uniform_id, type);
 }
 
-/// Override specially designed for texture
+/// Override specially designed sfor texture
 void Uniforms::Bind(std::string name, GLuint idx) {
   switch (type(name)) {
     case kTexture2D:
@@ -35,6 +35,13 @@ void Uniforms::Bind(std::string name, void *data, int n) {
       break;
     case kVector3f:
       glUniform3fv(id(name), n, (float*)data);
+      break;
+    case kFloat:
+      glUniform1fv(id(name), n, (float*)data);
+      break;
+    case kInt:
+      glUniform1iv(id(name), n, (int*)data);
+      break;
     default:
       break;
   }

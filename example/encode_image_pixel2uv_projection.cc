@@ -33,7 +33,7 @@ static const GLfloat kVertices[] = {
 
 int main() {
   gl::Model model;
-  model.LoadObj("../obj/beethoven.obj");
+  model.LoadObj("../model/beethoven/beethoven.obj");
 
   // Context and control init
   gl::Window window("F-16", kWidth, kHeight);
@@ -46,7 +46,7 @@ int main() {
   program1.Build();
 
   gl::Texture read_texture;
-  read_texture.Init("../obj/beethoven.png");
+  read_texture.Init("../model/beethoven/beethoven.png");
   gl::Uniforms uniforms1;
   uniforms1.GetLocation(program1.id(), "mvp", gl::kMatrix4f);
   gl::Args args1(3);
@@ -83,7 +83,7 @@ int main() {
   write_texture.Init(GL_RGBA32F, kWidth, kHeight);
   glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                        write_texture.id(), 0);
-  // Depth -> render buffer, for depth test
+  // Depth -> render buffer, for depth example
   GLuint render_buffer;
   glGenRenderbuffers(1, &render_buffer);
   glBindRenderbuffer(GL_RENDERBUFFER, render_buffer);
@@ -104,7 +104,7 @@ int main() {
   glfwPollEvents();
 
   glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-  // Enable depth test
+  // Enable depth example
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS);
 
@@ -114,7 +114,7 @@ int main() {
                           write_texture.width(),
                           CV_32FC4);
 
-  cv::Mat texmat = cv::imread("../obj/beethoven.png");
+  cv::Mat texmat = cv::imread("../model/beethoven.png");
 
   do {
     // Control

@@ -26,6 +26,9 @@ public:
 
   void Bind(int texture_idx);
 
+  cv::Mat &image() {
+    return texture_;
+  }
   const GLuint id() const {
     return texture_id_;
   }

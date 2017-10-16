@@ -11,12 +11,8 @@
 #include <iostream>
 #include <fstream>
 #include <glm/gtc/matrix_transform.hpp>
-#include "../src/uniforms.h"
 
-#include "../src/program.h"
-#include "../src/args.h"
-#include "../src/window.h"
-#include "../src/camera.h"
+#include "../include/glwrapper.h"
 
 static GLfloat vCoordinates[] = {
     1.0f, -1.0f, 0.0f,

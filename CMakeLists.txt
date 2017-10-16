@@ -1,5 +1,5 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
-PROJECT(opengl-snippet)
+PROJECT(opengl_wrapper)
 
 #----------
 # C++ version setting
@@ -13,8 +13,8 @@ SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -Wall")
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 
-SET(OPENGL_SNIPPET_LIBRARIES "")
-SET(OPENGL_SNIPPET_SOURCES
+SET(OPENGL_WRAPPER_LIBRARIES "")
+SET(OPENGL_WRAPPER_SOURCES
         src/window.cc
         src/program.cc
         src/args.cc
@@ -22,7 +22,7 @@ SET(OPENGL_SNIPPET_SOURCES
         src/texture.cc
         src/uniforms.cc
         src/camera.cc
-        src/trajectory.cc)
+        src/trajectory.cc include/glwrapper.h)
 #----------
 
 #----------
@@ -50,34 +50,38 @@ INCLUDE_DIRECTORIES(
 
 ## Lib
 LIST(APPEND
-        OPENGL_SNIPPET_LIBRARIES
+        OPENGL_WRAPPER_LIBRARIES
         ${OPENGL_LIBRARY}
         ${GLEW_LIBRARY})
 if (APPLE)
-    LIST(APPEND OPENGL_SNIPPET_LIBRARIES
+    LIST(APPEND OPENGL_WRAPPER_LIBRARIES
             ${GLFW3_LIBRARIES})
 elseif (UNIX)
-    LIST(APPEND OPENGL_SNIPPET_LIBRARIES
+    LIST(APPEND OPENGL_WRAPPER_LIBRARIES
             ${GLFW3_STATIC_LIBRARIES})
 endif()
 
-ADD_LIBRARY(opengl-snippet ${OPENGL_SNIPPET_SOURCES})
-TARGET_LINK_LIBRARIES(opengl-snippet
-        ${OPENGL_SNIPPET_LIBRARIES} ${OpenCV_LIBS})
+ADD_LIBRARY(opengl_wrapper SHARED ${OPENGL_WRAPPER_SOURCES})
+TARGET_LINK_LIBRARIES(opengl_wrapper
+        ${OPENGL_WRAPPER_LIBRARIES} ${OpenCV_LIBS})
 
 #---------
 # Compile and Link
-ADD_EXECUTABLE(model-demo demo/model-demo.cc)
-TARGET_LINK_LIBRARIES(model-demo opengl-snippet)
+ADD_EXECUTABLE(render_textured_model_multi_light example/render_textured_model_multi_light.cc)
+TARGET_LINK_LIBRARIES(render_textured_model_multi_light opengl_wrapper)
 
-ADD_EXECUTABLE(cube-demo demo/cube-demo.cc)
-TARGET_LINK_LIBRARIES(cube-demo opengl-snippet)
+ADD_EXECUTABLE(render_cube example/render_cube.cc)
+TARGET_LINK_LIBRARIES(render_cube opengl_wrapper)
 
-ADD_EXECUTABLE(float-texture demo/write-texture-demo.cc)
-TARGET_LINK_LIBRARIES(float-texture opengl-snippet)
+ADD_EXECUTABLE(render_shaded_texture example/render_shaded_texture.cc)
+TARGET_LINK_LIBRARIES(render_shaded_texture opengl_wrapper)
 
-ADD_EXECUTABLE(atlas-shading demo/shading.cc)
-TARGET_LINK_LIBRARIES(atlas-shading opengl-snippet)
+ADD_EXECUTABLE(encode_image_pixel2uv_projection example/encode_image_pixel2uv_projection.cc)
+TARGET_LINK_LIBRARIES(encode_image_pixel2uv_projection opengl_wrapper)
 
+ADD_EXECUTABLE(encode_sequence_pixel2uv_projection example/encode_sequence_pixel2uv_projection.cc)
+TARGET_LINK_LIBRARIES(encode_sequence_pixel2uv_projection opengl_wrapper)
 
+ADD_EXECUTABLE(synthesize_srid_dataset example/synthesize_srid_dataset.cc)
+TARGET_LINK_LIBRARIES(synthesize_srid_dataset opengl_wrapper)
 #---------

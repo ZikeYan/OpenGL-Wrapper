@@ -13,7 +13,9 @@ namespace gl {
 enum UniformType {
   kTexture2D,
   kMatrix4f,
-  kVector3f
+  kVector3f,
+  kFloat,
+  kInt
 };
 
 class Uniforms {

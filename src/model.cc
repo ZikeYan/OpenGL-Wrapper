@@ -15,9 +15,9 @@ Model::Model(std::string path) {
 }
 
 /// Not a robust version !
-// TODO: robustify it; test .ply
+// TODO: robustify it; example .ply
 void Model::LoadObj(std::string path) {
-  // Assuming it is .obj
+  // Assuming it is .model
   std::ifstream obj_stream(path, std::ios::in);
 
   std::vector<glm::vec3> raw_positions;

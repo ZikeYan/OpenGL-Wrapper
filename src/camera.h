@@ -8,6 +8,8 @@
 // set K, P
 // conversions regarding captured image from Window
 // TODO: add an assistance class for trajectory
+#include <fstream>
+
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -26,7 +28,7 @@ public:
 
   Camera(int width, int height,
          float fov = 45.0f,
-         float z_near = 0.1f,
+         float z_near = 0.01f,
          float z_far = 100.0f);
 
   cv::Mat ConvertDepthBuffer(cv::Mat& depthf, float factor);
@@ -38,6 +40,26 @@ public:
     projection_ = glm::perspective(fov, (float)width/(float)height,
                                    z_near, z_far);
   }
+
+  /// Use this to override AFTER initialized with default parameters
+  void set_intrinsic(std::string path) {
+    float fx, cx, fy, cy;
+    int width, height;
+    std::ifstream in(path);
+    in >> fx >> cx >> fy >> cy >> width >> height;
+    set_intrinsic(fx, cx, width, fy, cy, height);
+  }
+  void set_intrinsic(float fx, float cx, int width,
+                     float fy, float cy, int height) {
+    int width_2 = width / 2, height_2 = height / 2;
+    projection_[0][0] = fx / width_2;
+    projection_[1][1] = fy / height_2;
+    /// glm::perspective divides -z,
+    /// so translation should be negative correspondingly
+    projection_[3][0] = -(cx - width_2) / width_2;
+    projection_[3][1] = -(cy - height_2) / height_2;
+  }
+
   // Manually set view from input (short version)
   void set_view(glm::mat4 view) {
     view_ = view;

@@ -9,6 +9,11 @@
 /// VBO: buf1, buf2, ..., bufn
 #include <GL/glew.h>
 
+#ifdef USE_CUDA
+#include <cuda_gl_interop.h>
+#include <driver_types.h>
+#endif
+
 namespace gl {
 
 struct ArgAttrib {
@@ -21,7 +26,7 @@ struct ArgAttrib {
 class Args {
 public:
   explicit
-  Args(int argn);
+  Args(int argn, bool use_cuda = false);
 
   ~Args();
 
@@ -36,11 +41,15 @@ public:
                   ArgAttrib arg_attrib,
                   size_t size,
                   void* data);
-
 private:
+  bool use_cuda_;
+
   int argn_;
   GLuint vao_;
   GLuint *vbos_;
+#ifdef USE_CUDA
+  cudaGraphicsResource_t *cuda_res_;
+#endif
 };
 }
 

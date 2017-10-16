@@ -14,6 +14,7 @@ out vec3 light_c[LIGHT_COUNT];
 
 uniform mat4 c_T_w;
 uniform mat4 mvp; // K * c_T_w
+uniform int  light_cnt;
 uniform vec3 light[LIGHT_COUNT];
 
 void main() {
@@ -25,7 +26,7 @@ void main() {
     position_c   = (c_T_w * vec4(in_position, 1)).xyz;
     normal_c = (c_T_w * vec4(in_normal, 0)).xyz;
 
-    for (int i = 0; i < LIGHT_COUNT; ++i) {
+    for (int i = 0; i < light_cnt; ++i) {
         light_c[i] = (c_T_w * vec4(light[i], 1)).xyz;
     }
 }
