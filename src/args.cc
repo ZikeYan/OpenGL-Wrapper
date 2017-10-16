@@ -10,8 +10,9 @@
 #include <GL/glew.h>
 
 #ifdef USE_CUDA
-#include <cuda/helper_cuda.h>
+#include <driver_types.h>
 #include <cuda_runtime_api.h>
+#include <cuda/helper_cuda.h>
 #endif
 
 #include <iostream>
