@@ -1,0 +1,15 @@
+%YAML:1.0
+show_light_sources: 0
+use_preset_path:    1
+
+# Input params
+input_model_path: "../model/torus/torus.obj"
+# Original Resolution: 512 x 512 -> 640 x 480
+input_texture_path:  "../model/torus/plate-512.png"
+downsample_factor:  4
+
+# Output params
+output_path: "./lights2"
+output_width_original:  640
+output_height_original: 480
+

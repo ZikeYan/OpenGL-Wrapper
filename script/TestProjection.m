@@ -1,8 +1,5 @@
-Ps = cell(89, 1);
-
-
-for viewpoint = 1 : 89    
-    fid = fopen(sprintf('bin/map.txt'));
+for viewpoint = 1 : 1
+    fid = fopen(sprintf('../bin/map_factor_1_radius_0_elevation_4_azimuth_0.txt'));
     c = textscan(fid, '%d %d %f %f');
     fclose(fid);
     i = double(c{1}); 
@@ -10,9 +7,9 @@ for viewpoint = 1 : 89
     u = c{3};
     v = c{4};
 
-    atlas = im2double(imread('model/beethoven/beethoven.png'));
-    %atlas = im2double(imread('bin/shaded-texture.png')) ...
-    %     .* im2double(imread('obj/face.png'));
+    %atlas = im2double(imread('../model/torus/plate-512.png'));
+    atlas = im2double(imread('../bin/atlas_shading_factor_1.png')) ...
+         .* im2double(imread('../bin/atlas_albedo_factor_1.png'));
 
     tic;
     h_atlas = size(atlas, 1);

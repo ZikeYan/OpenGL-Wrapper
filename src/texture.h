@@ -17,9 +17,12 @@ public:
   ~Texture();
 
   void Load(std::string texture_path);
+  void Load(cv::Mat& texture);
 
   /// Init for reading. Load from file.
   void Init(std::string texture_path);
+  void Init(cv::Mat& texture);
+
   /// Init for writing. Note differences in filtering
   void Init(GLint internal_format,
             int width, int height);
@@ -47,6 +50,7 @@ private:
 
   bool texture_gened_ = false;
 
+  void ConfigTexture();
 };
 }
 

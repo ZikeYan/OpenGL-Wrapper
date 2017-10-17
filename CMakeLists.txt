@@ -82,6 +82,10 @@ TARGET_LINK_LIBRARIES(encode_image_pixel2uv_projection opengl_wrapper)
 ADD_EXECUTABLE(encode_sequence_pixel2uv_projection example/encode_sequence_pixel2uv_projection.cc)
 TARGET_LINK_LIBRARIES(encode_sequence_pixel2uv_projection opengl_wrapper)
 
-ADD_EXECUTABLE(synthesize_srid_dataset example/synthesize_srid_dataset.cc)
+ADD_EXECUTABLE(generate_spherical_poses
+        example/synthesize_srid_dataset/generate_spherical_poses.cc)
+TARGET_LINK_LIBRARIES(generate_spherical_poses -lopencv_core)
+ADD_EXECUTABLE(synthesize_srid_dataset
+        example/synthesize_srid_dataset/synthesize_srid_dataset.cc)
 TARGET_LINK_LIBRARIES(synthesize_srid_dataset opengl_wrapper)
 #---------

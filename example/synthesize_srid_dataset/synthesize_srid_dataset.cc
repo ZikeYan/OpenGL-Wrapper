@@ -2,16 +2,11 @@
 // Created by Neo on 21/09/2017.
 //
 
-/// Run the program twice.
-/// Step 1: high-res texture -> high-res rendered image
-/// Step 2: low-res texture -> low-res rendered image
-/// TODO: add configurations for camera movement and texture resolutions
-/// Input: mesh(.obj), texture(high-res, low-res .png)
-///        navigate with mouse and kbd
-/// Output: rendered image(high-res.png, low-res.png)
-///         pixel-wise texture coordinate map(.txt)
-///         => further interpreted by MATLAB
-
+/// In Super Resolution:
+/// Input: low-res texture -> low-res images
+///        projection matrices of [high-res texture -> high-res image]
+/// Output: high-res texture, high-res images
+/// (We should generate these ground truth)
 
 #include <fstream>
 #include <chrono>
@@ -21,91 +16,56 @@
 #include <glm/glm.hpp>
 
 #include <opencv2/opencv.hpp>
+#include "glwrapper.h"
 
-#include "../src/program.h"
-#include "../src/uniforms.h"
-#include "../src/camera.h"
-#include "../src/trajectory.h"
-#include "../src/window.h"
-#include "../src/texture.h"
-#include "../src/args.h"
-#include "../src/model.h"
-
-std::string kBasePath = "../../../data/TorusGlass";
-std::string kResPostfix = "1024";
-int kWidth = 1280;
-int kHeight= 960;
-
-bool kShowILightSrc = false;
-bool kIsCameraPathSet = true;
-
-std::vector<glm::vec3> axises = {
-    glm::vec3(0, 0, 0),
-    glm::vec3(20, 0, 0),
-    glm::vec3(0, 0, 0),
-    glm::vec3(0, 20, 0),
-    glm::vec3(0, 0, 0),
-    glm::vec3(0, 0, 20)
-};
-
-std::vector<glm::vec3> axis_colors = {
-    glm::vec3(1, 0, 0),
-    glm::vec3(1, 0, 0),
-    glm::vec3(0, 1, 0),
-    glm::vec3(0, 1, 0),
-    glm::vec3(0, 0, 1),
-    glm::vec3(0, 0, 1)
-};
+#include "cxxopts.h"
+#include "config_loader.h"
+#include "../encode_pixel2uv.h"
 
 /// Wrap for light sources
 /// Show axis and light sources
+std::string kConfigPath = "../example/synthesize_srid_dataset";
+
 int main() {
-  /// Light sources
-  std::vector<glm::vec3> light_src_positions = {
-      glm::vec3(-10, 0, 10),
-      glm::vec3(10, 0, 10),
-      glm::vec3(0, 0, 20),
-      glm::vec3(0, 0, -20),
-      glm::vec3(0, 10, 0),
-      glm::vec3(0, -10, 0),
-      glm::vec3(-10, 0, 0),
-      glm::vec3(10, 0, 0),
-      glm::vec3(-15, 0, 5),
-      glm::vec3(15, 0, 5),
-      glm::vec3(0, 15, 5),
-      glm::vec3(0, -15, 5),
-  };
-  std::vector<glm::vec3> light_src_colors = {
-      glm::vec3(1, 1, 1),
-      glm::vec3(1, 1, 1),
-      glm::vec3(1, 1, 1),
-      glm::vec3(1, 1, 1),
-      glm::vec3(1, 1, 1),
-      glm::vec3(1, 1, 1),
-      glm::vec3(1, 1, 1),
-      glm::vec3(1, 1, 1),
-      glm::vec3(1, 1, 1),
-      glm::vec3(1, 1, 1),
-      glm::vec3(1, 1, 1),
-      glm::vec3(1, 1, 1)
-  };
-  float light_power = 30;
-  glm::vec3 light_color = glm::vec3(1, 1, 1);
+  /// Config loader
+  ConfigLoader config_loader;
+  config_loader.LoadParams(kConfigPath + "/params.yaml");
+  config_loader.LoadLights(kConfigPath + "/lights.yaml");
+  config_loader.LoadPositions("positions.yaml");
+
+  float light_power = config_loader.light_power;
+  std::vector<glm::vec3> &light_positions = config_loader.light_positions;
+  std::vector<glm::vec3> &light_colors = config_loader.light_colors;
+  glm::vec3 light_color = light_colors[0];
+  int light_cnt = (int) light_colors.size();
+
+  std::vector<glm::vec3> &camera_positions = config_loader.camera_positions;
+  std::vector<glm::ivec3> &camera_polars = config_loader.camera_polars;
   std::stringstream ss;
-  ss << light_src_positions.size();
+  ss << light_positions.size();
 
   //////////////////////////////////
-  /// Load data at the first stage
-  gl::Model model;
-  model.LoadObj("../model/torus/torus.obj");
-
-  /// Context and control init
-  gl::Window window("Generate dataset", kWidth, kHeight);
+  int image_width = config_loader.output_width_original
+                    / config_loader.downsample_factor;
+  int image_height = config_loader.output_height_original
+                     / config_loader.downsample_factor;
+#ifdef __APPLE__
+  image_width /= 2;
+  image_height /= 2;
+#endif
+  gl::Window window("Synthesizer", image_width, image_height);
   gl::Camera camera(window.width(), window.height());
   camera.SwitchInteraction(true);
 
+  gl::Model model;
+  model.LoadObj(config_loader.input_model_path);
   gl::Texture input_texture;
-  input_texture.Init("../model/torus/glass-" + kResPostfix + ".png");
+  cv::Mat origin_texture = cv::imread(config_loader.input_texture_path);
+  cv::Mat downsampled_texture;
+  cv::resize(origin_texture, downsampled_texture,
+             cv::Size(origin_texture.cols / config_loader.downsample_factor,
+                      origin_texture.rows / config_loader.downsample_factor));
+  input_texture.Init(downsampled_texture);
 
   ////////////////////////////////////
   /// Prepare for writing uv coordinates into texture
@@ -119,13 +79,18 @@ int main() {
   texture_writer_uniforms.GetLocation(texture_writer_program.id(),
                                       "mvp", gl::kMatrix4f);
   gl::Args texture_writer_args(3);
-  texture_writer_args.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
-                                 model.positions().size(), model.positions().data());
-  texture_writer_args.BindBuffer(1, {GL_ARRAY_BUFFER, sizeof(float), 2, GL_FLOAT},
+  texture_writer_args.BindBuffer(0,
+                                 {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
+                                 model.positions().size(),
+                                 model.positions().data());
+  texture_writer_args.BindBuffer(1,
+                                 {GL_ARRAY_BUFFER, sizeof(float), 2, GL_FLOAT},
                                  model.uvs().size(), model.uvs().data());
-  texture_writer_args.BindBuffer(2, {GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int),
-                                     1, GL_UNSIGNED_INT},
-                                 model.indices().size(), model.indices().data());
+  texture_writer_args.BindBuffer(2,
+                                 {GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int),
+                                  1, GL_UNSIGNED_INT},
+                                 model.indices().size(),
+                                 model.indices().data());
 
   // Not encapsulated now: set context for writing to renderbuffer
   // Create framebuffer
@@ -134,9 +99,10 @@ int main() {
   glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
   // Color -> texture, to output
   gl::Texture write_texture;
-  write_texture.Init(GL_RGBA32F, kWidth, kHeight);
+  write_texture.Init(GL_RGBA32F, image_width, image_height);
   glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                        write_texture.id(), 0);
+
   // Depth -> render buffer, for depth test
   GLuint render_buffer;
   glGenRenderbuffers(1, &render_buffer);
@@ -149,8 +115,8 @@ int main() {
   GLenum draw_buffers[1] = {GL_COLOR_ATTACHMENT0};
   glDrawBuffers(1, draw_buffers);
   // Always check that our framebuffer is ok
-  if(glCheckFramebufferStatus(GL_FRAMEBUFFER)
-     != GL_FRAMEBUFFER_COMPLETE)
+  if (glCheckFramebufferStatus(GL_FRAMEBUFFER)
+      != GL_FRAMEBUFFER_COMPLETE)
     return -1;
   ////////////////////////////////////
 
@@ -166,18 +132,13 @@ int main() {
   render_program.Build();
 
   gl::Uniforms render_uniforms;
-  render_uniforms.GetLocation(render_program.id(), "mvp",
-                              gl::kMatrix4f);
-  render_uniforms.GetLocation(render_program.id(), "c_T_w",
-                              gl::kMatrix4f);
+  render_uniforms.GetLocation(render_program.id(), "mvp", gl::kMatrix4f);
+  render_uniforms.GetLocation(render_program.id(), "c_T_w", gl::kMatrix4f);
   render_uniforms.GetLocation(render_program.id(), "texture_sampler",
                               gl::kTexture2D);
-  render_uniforms.GetLocation(render_program.id(), "light",
-                              gl::kVector3f);
-  render_uniforms.GetLocation(render_program.id(), "light_cnt",
-                              gl::kInt);
-  render_uniforms.GetLocation(render_program.id(), "light_power",
-                              gl::kFloat);
+  render_uniforms.GetLocation(render_program.id(), "light", gl::kVector3f);
+  render_uniforms.GetLocation(render_program.id(), "light_cnt", gl::kInt);
+  render_uniforms.GetLocation(render_program.id(), "light_power", gl::kFloat);
   render_uniforms.GetLocation(render_program.id(), "light_color",
                               gl::kVector3f);
 
@@ -191,11 +152,13 @@ int main() {
   render_args.InitBuffer(3, {GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int),
                              1, GL_UNSIGNED_INT},
                          model.indices().size());
+
   ////////////////////////////////
   /// Assistance: draw light sources and axises
   gl::Program primitive_program;
   primitive_program.Load("../shader/primitive_vertex.glsl", gl::kVertexShader);
-  primitive_program.Load("../shader/primitive_fragment.glsl", gl::kFragmentShader);
+  primitive_program.Load("../shader/primitive_fragment.glsl",
+                         gl::kFragmentShader);
   primitive_program.Build();
 
   gl::Uniforms primitive_uniforms;
@@ -203,9 +166,19 @@ int main() {
 
   gl::Args light_src_args(2);
   light_src_args.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
-                            light_src_positions.size(), light_src_positions.data());
+                            light_positions.size(), light_positions.data());
   light_src_args.BindBuffer(1, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
-                            light_src_colors.size(), light_src_colors.data());
+                            light_colors.size(), light_colors.data());
+  std::vector<glm::vec3> axises = {
+      glm::vec3(-20, 0, 0), glm::vec3(20, 0, 0),
+      glm::vec3(0, -20, 0), glm::vec3(0, 20, 0),
+      glm::vec3(0, 0, -20), glm::vec3(0, 0, 20)
+  };
+  std::vector<glm::vec3> axis_colors = {
+      glm::vec3(1, 0, 0), glm::vec3(1, 0, 0),
+      glm::vec3(0, 1, 0), glm::vec3(0, 1, 0),
+      glm::vec3(0, 0, 1), glm::vec3(0, 0, 1)
+  };
   gl::Args axis_args(2);
   axis_args.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
                        axises.size(), axises.data());
@@ -219,33 +192,23 @@ int main() {
   glDepthFunc(GL_LESS);
 
   // Buffer to collect written texture
-  cv::Mat pixel = cv::Mat(write_texture.height(),
-                          write_texture.width(),
-                          CV_32FC4);
-
-  int cnt = 0;
-
+  cv::Mat pixel2uv = cv::Mat(write_texture.height(),
+                             write_texture.width(),
+                             CV_32FC4);
   std::chrono::time_point<std::chrono::system_clock> prev_hit, curr_hit;
   prev_hit = std::chrono::system_clock::now();
 
-  std::vector<glm::vec3> viewpoints;
-  int light_cnt = 8;
-  for (float h = -2; h <= 2; h += 2) {
-    for (float t = 0; t < 2*M_PI; t += 2*M_PI/10) {
-      viewpoints.push_back(glm::vec3(2*cos(t), 2*sin(t), h));
-    }
-  }
-
   int i = 0;
   do {
-    if (i >= viewpoints.size()) break;
+    if (i >= camera_positions.size()) break;
     // Control
-    if (! kIsCameraPathSet) {
+    if (!config_loader.use_preset_path) {
       camera.UpdateView(window);
     } else {
       camera.set_view(
-          glm::lookAt(viewpoints[i], glm::vec3(0, 0, 0), glm::vec3(0, 0, 1)));
-      if (i > 0 && i % 11 == 0) light_cnt += 2;
+          glm::lookAt(camera_positions[i],
+                      glm::vec3(0, 0, 0),
+                      glm::vec3(0, 0, 1)));
       ++i;
     }
     glm::mat4 mvp = camera.mvp();
@@ -274,7 +237,7 @@ int main() {
     render_uniforms.Bind("mvp", &mvp, 1);
     render_uniforms.Bind("c_T_w", &view, 1);
     render_uniforms.Bind("texture_sampler", GLuint(0));
-    render_uniforms.Bind("light", light_src_positions.data(), light_cnt);
+    render_uniforms.Bind("light", light_positions.data(), light_cnt);
     render_uniforms.Bind("light_cnt", &light_cnt, 1);
     render_uniforms.Bind("light_power", &light_power, 1);
     render_uniforms.Bind("light_color", &light_color, 1);
@@ -295,7 +258,7 @@ int main() {
     glDrawElements(GL_TRIANGLES, model.indices().size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 
-    if (kShowILightSrc) {
+    if (config_loader.show_light_sources) {
       glUseProgram(primitive_program.id());
       primitive_uniforms.Bind("mvp", &mvp, 1);
       glBindVertexArray(axis_args.vao());
@@ -304,42 +267,31 @@ int main() {
 
       glBindVertexArray(light_src_args.vao());
       glEnable(GL_PROGRAM_POINT_SIZE);
-      glDrawArrays(GL_POINTS, 0, light_src_positions.size());
+      glDrawArrays(GL_POINTS, 0, light_positions.size());
       glBindVertexArray(0);
     }
 
     /// Capture the texture
-    if (kIsCameraPathSet || window.get_key(GLFW_KEY_ENTER)) {
-      curr_hit = std::chrono::system_clock::now();
-      std::chrono::duration<double> elapsed_seconds = curr_hit - prev_hit;
-      prev_hit = curr_hit;
-      std::cout << elapsed_seconds.count() << "s\n";
-      if (kIsCameraPathSet || elapsed_seconds.count() > 3.0f) {
+    if (config_loader.use_preset_path) {
+      /// Write texture (i.e. projection map)
+      write_texture.Bind(0);
+      glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, pixel2uv.data);
+      cv::flip(pixel2uv, pixel2uv, 0);
 
-        /// Write texture (i.e. projection map)
-        write_texture.Bind(0);
-        glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, pixel.data);
-        cv::flip(pixel, pixel, 0);
-
-        /// Write image
-        std::stringstream ss;
-        ss << kBasePath + "/image/image-" + kResPostfix + "-" << cnt << ".png";
-        cv::imwrite(ss.str(), window.CaptureRGB());
-
-        ss.str("");
-        ss << kBasePath + "/map/map-" + kResPostfix + "-" << cnt << ".txt";
-        std::ofstream out(ss.str());
-        for (int i = 0; i < pixel.rows; ++i) {
-          for (int j = 0; j < pixel.cols; ++j) {
-            cv::Vec4f v = pixel.at<cv::Vec4f>(i, j);
-            if (v[0] != 0 || v[1] != 0) {
-              out << i << " " << j << " "
-                  << v[0] << " " << v[1] << std::endl;
-            }
-          }
-        }
-        ++cnt;
-      }
+      /// Write image
+      std::stringstream ss;
+      ss.str("");
+      ss << "_factor_" << config_loader.downsample_factor
+         << "_radius_" << camera_polars[i].x
+         << "_elevation_" << camera_polars[i].y
+         << "_azimuth_" << camera_polars[i].z;
+      cv::imwrite(config_loader.output_path + "/image" + ss.str() + ".png",
+                  window.CaptureRGB());
+      EncodePixelToUV(config_loader.output_path + "/map" + ss.str() + ".txt",
+                      pixel2uv);
+    } else if (window.get_key(GLFW_KEY_ENTER) == GLFW_PRESS) {
+      cv::imwrite(config_loader.output_path + "/lights_config.png",
+                  window.CaptureRGB());
     }
     window.swap_buffer();
   } while( window.get_key(GLFW_KEY_ESCAPE) != GLFW_PRESS &&
@@ -370,14 +322,20 @@ int main() {
                           model.indices().size(), model.indices().data());
 
   /// divided by 2 depends on Resolution: refactor it later
-  window.Resize(input_texture.width(), input_texture.height());
+  int window_width = input_texture.width();
+  int window_height = input_texture.height();
+#ifdef __APPLE__
+  window_width /= 2;
+  window_height /= 2;
+#endif
+  window.Resize(window_width, window_height);
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   input_texture.Bind(0);
   glUseProgram(shading_program.id());
 
   shading_uniforms.Bind("lights",
-                        light_src_positions.data(),
-                        light_src_positions.size());
+                        light_positions.data(),
+                        light_positions.size());
   shading_uniforms.Bind("light_power", &light_power, 1);
   shading_uniforms.Bind("light_color", &light_color, 1);
   glBindVertexArray(shading_args.vao());
@@ -385,32 +343,36 @@ int main() {
   glBindVertexArray(0);
 
   window.swap_buffer();
-  pixel = window.CaptureRGB();
 
-  cv::imwrite(kBasePath + "/shaded-atlas-"+ kResPostfix + ".png",
-              pixel);
+  cv::Mat shading = window.CaptureRGB();
+  ss.str("");
+  ss << config_loader.output_path + "/atlas_shading"
+     << "_factor_" << config_loader.downsample_factor
+     << ".png";
+  cv::imwrite(ss.str(), shading);
 
   cv::Mat albedo;
   cv::flip(input_texture.image(), albedo, 0);
-  cv::imwrite(kBasePath + "/albedo-atlas-" + kResPostfix + ".png", albedo);
+  ss.str("");
+  ss << config_loader.output_path + "/atlas_albedo"
+     << "_factor_" << config_loader.downsample_factor
+     << ".png";
+  cv::imwrite(ss.str(), albedo);
 
-  cv::Mat composed_atlas = cv::Mat(albedo.rows, albedo.cols, CV_8UC3);
-  for (int i = 0; i < composed_atlas.rows; ++i) {
-    for (int j = 0; j < composed_atlas.cols; ++j) {
+  // Ugly uchar3 mul float
+  cv::Mat composed = cv::Mat(albedo.rows, albedo.cols, CV_8UC3);
+  for (int i = 0; i < composed.rows; ++i) {
+    for (int j = 0; j < composed.cols; ++j) {
       cv::Vec3b r = albedo.at<cv::Vec3b>(i,j);
-      float s = pixel.at<cv::Vec3b>(i, j)[0];
-      composed_atlas.at<cv::Vec3b>(i, j) = cv::Vec3b(r[0]*s/255.0,
-                                                     r[1]*s/255.0,
-                                                     r[2]*s/255.0);
+      float s = shading.at<cv::Vec3b>(i, j)[0];
+      composed.at<cv::Vec3b>(i, j)
+          = cv::Vec3b(r[0]*s/255.0f, r[1]*s/255.0f, r[2]*s/255.0f);
     }
   }
-
-  cv::imwrite(kBasePath + "/composed-atlas-" + kResPostfix + ".png",
-              composed_atlas);
-  cv::Mat composed_atlas2x;
-  cv::resize(composed_atlas, composed_atlas2x, cv::Size(2*composed_atlas.rows,
-                                                        2*composed_atlas.cols));
-  cv::imwrite(kBasePath + "/composed-atlas-" + kResPostfix + "-2x.png",
-              composed_atlas2x);
+  ss.str("");
+  ss << config_loader.output_path + "/atlas_composed"
+     << "_factor_" << config_loader.downsample_factor
+     << ".png";
+  cv::imwrite(ss.str(), composed);
   return 0;
 }
