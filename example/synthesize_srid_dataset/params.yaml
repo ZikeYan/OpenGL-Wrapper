@@ -6,7 +6,7 @@ use_preset_path:    1
 input_model_path: "../model/torus/torus.obj"
 # Original Resolution: 512 x 512 -> 640 x 480
 input_texture_path:  "../model/torus/plate-512.png"
-downsample_factor:  4
+downsample_factor:  1
 
 # Output params
 output_path: "./lights2"

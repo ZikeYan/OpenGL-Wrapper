@@ -58,6 +58,12 @@ void Window::Resize(int width, int height) {
   width_ = width;
   height_ = height;
   glfwSetWindowSize(window_, width, height);
+  /// There is a bug of GLFW here @ Linux
+  glViewport(0, 0, width, height);
+  std::cout << width << " " << height << std::endl;
+  glfwPollEvents();
+  glfwGetWindowSize(window_, &width, &height);
+  std::cout << width << " !!! " << height << std::endl;
 
   int res_factor = 1;
 #ifdef __APPLE__
@@ -71,8 +77,11 @@ void Window::Resize(int width, int height) {
 }
 
 cv::Mat Window::CaptureRGB() {
+  int width, height;
+
   glReadPixels(0, 0, img_width_, img_height_,
                GL_BGR, GL_UNSIGNED_BYTE, rgb_.data);
+
   cv::Mat ret;
   cv::flip(rgb_, ret, 0);
 

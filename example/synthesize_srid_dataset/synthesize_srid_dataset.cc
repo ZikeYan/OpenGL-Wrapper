@@ -329,6 +329,9 @@ int main() {
   window_height /= 2;
 #endif
   window.Resize(window_width, window_height);
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   input_texture.Bind(0);
   glUseProgram(shading_program.id());
@@ -343,8 +346,10 @@ int main() {
   glBindVertexArray(0);
 
   window.swap_buffer();
-
   cv::Mat shading = window.CaptureRGB();
+  cv::imshow("test", shading);
+  cv::waitKey(-1);
+
   ss.str("");
   ss << config_loader.output_path + "/atlas_shading"
      << "_factor_" << config_loader.downsample_factor

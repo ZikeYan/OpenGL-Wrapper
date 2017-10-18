@@ -22,7 +22,7 @@ SET(OPENGL_WRAPPER_SOURCES
         src/texture.cc
         src/uniforms.cc
         src/camera.cc
-        src/trajectory.cc include/glwrapper.h)
+        src/trajectory.cc)
 #----------
 
 #----------
@@ -63,7 +63,8 @@ endif()
 
 ADD_LIBRARY(opengl_wrapper SHARED ${OPENGL_WRAPPER_SOURCES})
 TARGET_LINK_LIBRARIES(opengl_wrapper
-        ${OPENGL_WRAPPER_LIBRARIES} ${OpenCV_LIBS})
+        ${OPENGL_WRAPPER_LIBRARIES}
+        -lopencv_core -lopencv_highgui -lopencv_imgproc)
 
 #---------
 # Compile and Link
