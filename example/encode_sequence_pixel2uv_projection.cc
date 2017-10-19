@@ -26,8 +26,11 @@
 #include "../src/args.h"
 #include "../src/model.h"
 
-int kWidth = 1280;
-int kHeight= 960;
+int kWindowWidth = 640;
+int kWindowHeight= 480;
+
+int kTextureWidth = 1280;
+int kTextureHeight = 960;
 
 /// Wrap for light sources
 /// Show axis and light sources
@@ -38,7 +41,7 @@ int main() {
   model.LoadObj("../model/face/face.obj");
 
   /// Context and control init
-  gl::Window window("Projection mapping", kWidth, kHeight);
+  gl::Window window("Projection mapping", kWindowWidth, kWindowHeight);
 
   gl::Camera camera(window.width(), window.height());
   camera.set_intrinsic("../model/face/face-intrinsic.txt");
@@ -67,9 +70,9 @@ int main() {
   ////////////////////////////////////
   /// Prepare for writing uv coordinates into texture
   gl::Program texture_writer_program;
-  texture_writer_program.Load("../shader/write_uv_vertex.glsl",
+  texture_writer_program.Load("../shader/encode_pixel_uv_vertex.glsl",
                               gl::kVertexShader);
-  texture_writer_program.Load("../shader/write_uv_fragment.glsl",
+  texture_writer_program.Load("../shader/encode_pixel_uv_fragment.glsl",
                               gl::kFragmentShader);
   texture_writer_program.Build();
   gl::Uniforms texture_writer_uniforms;
@@ -91,7 +94,7 @@ int main() {
   glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
   // Color -> texture, to output
   gl::Texture write_texture;
-  write_texture.Init(GL_RGBA32F, kWidth, kHeight);
+  write_texture.Init(GL_RGBA32F, kTextureWidth, kTextureHeight);
   glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                        write_texture.id(), 0);
   // Depth -> render buffer, for depth test
@@ -99,7 +102,7 @@ int main() {
   glGenRenderbuffers(1, &render_buffer);
   glBindRenderbuffer(GL_RENDERBUFFER, render_buffer);
   glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
-                        kWidth, kHeight);
+                        write_texture.width(), write_texture.height());
   glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
                             GL_RENDERBUFFER, render_buffer);
   // Set the list of draw buffers.
@@ -151,6 +154,7 @@ int main() {
     // Pass 1:
     // Render to framebuffer, into texture
     glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
+    glViewport(0, 0, kTextureWidth*2, kTextureHeight*2);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     /// Choose shader
@@ -164,6 +168,7 @@ int main() {
     // Pass 2:
     // Render the scene for visualization
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, kWindowWidth*2, kWindowHeight*2);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glUseProgram(render_program.id());
@@ -192,10 +197,8 @@ int main() {
     cv::flip(pixel, pixel, 0);
 
     std::stringstream ss;
-    ss << "im_gl" << i << ".png";
-    cv::imwrite(ss.str(), window.CaptureRGB());
     ss.str("");
-    ss << "map" << i << ".txt";
+    ss << "map_" << i << ".txt";
     std::ofstream out(ss.str());
     for (int i = 0; i < pixel.rows; ++i) {
       for (int j = 0; j < pixel.cols; ++j) {

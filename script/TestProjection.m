@@ -1,5 +1,6 @@
 for viewpoint = 1 : 1
-    fid = fopen(sprintf('../bin/map_factor_1_radius_0_elevation_4_azimuth_0.txt'));
+    %fid = fopen(sprintf('../bin/map_factor_1_radius_0_elevation_4_azimuth_0.txt'));
+    fid = fopen(sprintf('../bin/map_1.txt'));
     c = textscan(fid, '%d %d %f %f');
     fclose(fid);
     i = double(c{1}); 
@@ -7,15 +8,15 @@ for viewpoint = 1 : 1
     u = c{3};
     v = c{4};
 
-    %atlas = im2double(imread('../model/torus/plate-512.png'));
-    atlas = im2double(imread('../bin/atlas_shading_factor_1.png')) ...
-         .* im2double(imread('../bin/atlas_albedo_factor_1.png'));
+    atlas = im2double(imread('../model/face/face.png'));
+    %atlas = im2double(imread('../bin/atlas_shading_factor_1.png')) ...
+    %     .* im2double(imread('../bin/atlas_albedo_factor_1.png'));
 
     tic;
     h_atlas = size(atlas, 1);
     w_atlas = size(atlas, 2);
-    h_img = 480;
-    w_img = 640;
+    h_img = 1920;
+    w_img = 2560;
 
     Ps{viewpoint} = DecodeProjection(i, j, w_img, h_img, ...
                                      u, v, w_atlas, h_atlas);

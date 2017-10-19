@@ -59,7 +59,6 @@ void Window::Resize(int width, int height) {
   height_ = height;
   glfwSetWindowSize(window_, width, height);
   /// There is a bug of GLFW here @ Linux
-  glViewport(0, 0, width, height);
   std::cout << width << " " << height << std::endl;
   glfwPollEvents();
   glfwGetWindowSize(window_, &width, &height);
@@ -71,6 +70,7 @@ void Window::Resize(int width, int height) {
 #endif
   img_width_  = res_factor * width_;
   img_height_ = res_factor * height_;
+  glViewport(0, 0, img_width_, img_height_);
   rgb_   = cv::Mat(img_height_, img_width_, CV_8UC3);
   rgba_  = cv::Mat(img_height_, img_width_, CV_8UC4);
   depth_ = cv::Mat(img_height_, img_width_, CV_32F);

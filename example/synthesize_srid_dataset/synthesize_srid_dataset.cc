@@ -70,9 +70,9 @@ int main() {
   ////////////////////////////////////
   /// Prepare for writing uv coordinates into texture
   gl::Program texture_writer_program;
-  texture_writer_program.Load("../shader/write_uv_vertex.glsl",
+  texture_writer_program.Load("../shader/encode_pixel_uv_vertex.glsl",
                               gl::kVertexShader);
-  texture_writer_program.Load("../shader/write_uv_fragment.glsl",
+  texture_writer_program.Load("../shader/encode_pixel_uv_fragment.glsl",
                               gl::kFragmentShader);
   texture_writer_program.Build();
   gl::Uniforms texture_writer_uniforms;

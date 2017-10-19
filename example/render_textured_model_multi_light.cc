@@ -17,8 +17,8 @@
 
 #include "../include/glwrapper.h"
 
-const int kWidth  = 1280;
-const int kHeight = 960;
+const int kWindowWidth  = 1280;
+const int kWindowHeight = 960;
 
 int main() {
   std::vector<glm::vec3> light_src_positions = {
@@ -81,7 +81,7 @@ int main() {
   texture.Load("../model/beethoven/beethoven.png");
 
   // Context and control init
-  gl::Window window("F16", kWidth, kHeight);
+  gl::Window window("F16", kWindowWidth, kWindowHeight);
   gl::Camera camera(window.width(), window.height());
   camera.SwitchInteraction(true);
 

@@ -9,18 +9,14 @@
 #include <glm/glm.hpp>
 
 #include <opencv2/opencv.hpp>
+#include "glwrapper.h"
 
-#include "../src/program.h"
-#include "../src/uniforms.h"
-#include "../src/camera.h"
-#include "../src/trajectory.h"
-#include "../src/window.h"
-#include "../src/texture.h"
-#include "../src/args.h"
-#include "../src/model.h"
-
+// Actual window size: 1280x960
 int kWindowWidth = 640;
 int kWindowHeight= 480;
+
+int kTextureWidth = 1280;
+int kTextureHeight = 960;
 
 static const GLfloat kVertices[] = {
     -1.0f, -1.0f, 0.0f,
@@ -33,22 +29,24 @@ static const GLfloat kVertices[] = {
 
 int main() {
   gl::Model model;
-  model.LoadObj("../model/beethoven/beethoven.obj");
+  model.LoadObj("../model/face/face.obj");
 
   // Context and control init
   gl::Window window("F-16", kWindowWidth, kWindowHeight);
   gl::Camera camera(window.width(), window.height());
-  camera.SwitchInteraction(true);
+  camera.set_intrinsic("../model/face/face-intrinsic.txt");
+  camera.SwitchInteraction(false);
 
   gl::Program program1;
-  program1.Load("../shader/encode_pixel_uv_vertex.glsl", gl::kVertexShader);
-  program1.Load("../shader/encode_pixel_uv_fragment.glsl", gl::kFragmentShader);
+  program1.Load("../shader/render_to_fbo_vertex.glsl", gl::kVertexShader);
+  program1.Load("../shader/render_to_fbo_fragment.glsl", gl::kFragmentShader);
   program1.Build();
 
   gl::Texture read_texture;
-  read_texture.Init("../model/beethoven/beethoven.png");
+  read_texture.Init("../model/face/face.png");
   gl::Uniforms uniforms1;
   uniforms1.GetLocation(program1.id(), "mvp", gl::kMatrix4f);
+  uniforms1.GetLocation(program1.id(), "tex", gl::kTexture2D);
   gl::Args args1(3);
   args1.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
                    model.positions().size(), model.positions().data());
@@ -80,7 +78,7 @@ int main() {
   glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
   // Color -> texture, to output
   gl::Texture write_texture;
-  write_texture.Init(GL_RGBA32F, kWindowWidth, kWindowHeight);
+  write_texture.Init(GL_RGBA, kTextureWidth, kTextureHeight);
   glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                        write_texture.id(), 0);
   // Depth -> render buffer, for depth example
@@ -109,28 +107,36 @@ int main() {
   glDepthFunc(GL_LESS);
 
   gl::Trajectory traj;
+  traj.Load("../model/face/face-extrinsic.txt");
+  glm::mat4 model_mat = glm::mat4(1.0);
+  model_mat[1][1] = model_mat[2][2] = -1;
+  camera.set_model(model_mat);
+  for (auto& T : traj.poses()) {
+    T = model_mat * glm::transpose(T) * model_mat;
+  }
 
   cv::Mat pixel = cv::Mat(write_texture.height(),
                           write_texture.width(),
-                          CV_32FC4);
+                          CV_8UC4);
 
-  cv::Mat texmat = cv::imread("../model/beethoven.png");
+  for (int i = 0; i < traj.poses().size(); ++i) {
+    std::cout << i << " / " << traj.poses().size() << std::endl;
+    glm::mat4 mvp = camera.projection() * traj.poses()[i] * camera.model();
 
-  do {
     // Control
     camera.UpdateView(window);
-    glm::mat4 mvp = camera.mvp();
-    glm::mat4 view = camera.view();
 
     // Pass 1:
     // Render to framebuffer, into depth texture
     glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
+    glViewport(0, 0, kTextureWidth*2, kTextureHeight*2); // retina
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     /// Choose shader
     glUseProgram(program1.id());
     read_texture.Bind(0);
     uniforms1.Bind("mvp", &mvp, 1);
+    uniforms1.Bind("tex", GLuint(0));
     glBindVertexArray(args1.vao());
     glDrawElements(GL_TRIANGLES, model.indices().size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
@@ -138,40 +144,26 @@ int main() {
     // Pass 2:
     // Test rendering texture
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, kWindowWidth*2, kWindowHeight*2); // 2x retina
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(program2.id());
-    glActiveTexture(GL_TEXTURE0);
+    glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, write_texture.id());
-    uniforms2.Bind("tex", GLuint(0));
+    uniforms2.Bind("tex", GLuint(1));
     glBindVertexArray(args2.vao());
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
 
-    if (window.get_key(GLFW_KEY_ENTER)) {
-      glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, pixel.data);
-      cv::flip(pixel, pixel, 0);
-
-      std::ofstream out("map.txt");
-      cv::Mat show = cv::Mat(kWindowHeight * 2, kWindowWidth * 2, CV_8UC3);
-      for (int i = 0; i < pixel.rows; ++i) {
-        for (int j = 0; j < pixel.cols; ++j) {
-          cv::Vec4f v = pixel.at<cv::Vec4f>(i, j);
-          if (v[0] != 0 || v[1] != 0) {
-            out << i << " " << j << " "
-                << v[0] << " " << v[1] << std::endl;
-//            show.at<cv::Vec3b>(i, j)
-//                = texmat.at<cv::Vec3b>(texmat.rows * (1 - v[1]),
-//                                       texmat.cols * v[0]);
-          }
-        }
-      }
-//      cv::imshow("show", show);
-//      cv::waitKey(20);
-    }
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_BGRA, GL_UNSIGNED_BYTE, pixel.data);
+    cv::flip(pixel, pixel, 0);
+    std::stringstream ss;
+    ss.str("");
+    ss << "pixel_" << i << ".png";
+    cv::imwrite(ss.str(), pixel);
 
     window.swap_buffer();
-  } while( window.get_key(GLFW_KEY_ESCAPE) != GLFW_PRESS &&
-           window.should_close() == 0 );
+  }
+
 
   // Close OpenGL window and terminate GLFW
 //  cv::resize(pixel, pixel, cv::Size(pixel.cols/2, pixel.rows/2));

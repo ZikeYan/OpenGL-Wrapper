@@ -16,6 +16,7 @@ SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 SET(OPENGL_WRAPPER_LIBRARIES "")
 SET(OPENGL_WRAPPER_SOURCES
         src/window.cc
+        src/frame_buffer.cc
         src/program.cc
         src/args.cc
         src/model.cc
@@ -77,11 +78,14 @@ TARGET_LINK_LIBRARIES(render_cube opengl_wrapper)
 ADD_EXECUTABLE(render_shaded_texture example/render_shaded_texture.cc)
 TARGET_LINK_LIBRARIES(render_shaded_texture opengl_wrapper)
 
-ADD_EXECUTABLE(encode_image_pixel2uv_projection example/encode_image_pixel2uv_projection.cc)
-TARGET_LINK_LIBRARIES(encode_image_pixel2uv_projection opengl_wrapper)
+ADD_EXECUTABLE(render_to_fbo example/render_to_fbo.cc)
+TARGET_LINK_LIBRARIES(render_to_fbo opengl_wrapper)
 
 ADD_EXECUTABLE(encode_sequence_pixel2uv_projection example/encode_sequence_pixel2uv_projection.cc)
 TARGET_LINK_LIBRARIES(encode_sequence_pixel2uv_projection opengl_wrapper)
+
+ADD_EXECUTABLE(encode_image_pixel2uv_projection example/encode_image_pixel2uv_projection.cc)
+TARGET_LINK_LIBRARIES(encode_image_pixel2uv_projection opengl_wrapper)
 
 ADD_EXECUTABLE(generate_spherical_poses
         example/synthesize_srid_dataset/generate_spherical_poses.cc)
