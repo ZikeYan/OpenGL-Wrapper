@@ -28,7 +28,6 @@ int main() {
 
   gl::Model model;
   model.LoadObj("../model/beethoven/beethoven.obj");
-
   gl::Texture texture;
   texture.Load("../model/beethoven/beethoven.png");
 
@@ -36,46 +35,42 @@ int main() {
   gl::Window window("Shading", texture.width(), texture.height());
   texture.Init("../model/beethoven/beethoven.png");
   /// Finally output shaded texture
-  gl::Program shading_program;
-  shading_program.Load("../shader/shading_vertex.glsl", gl::kVertexShader);
-  shading_program.Load("../shader/shading_fragment.glsl", gl::kFragmentShader);
-  shading_program.ReplaceMacro("LIGHT_COUNT", ss.str(), gl::kFragmentShader);
-  shading_program.Build();
-
-  gl::Uniforms shading_uniforms;
-  shading_uniforms.GetLocation(shading_program.id(), "lights", gl::kVector3f);
-  shading_uniforms.GetLocation(shading_program.id(), "light_power", gl::kFloat);
-  shading_uniforms.GetLocation(shading_program.id(), "light_color", gl::kVector3f);
-
-  gl::Args shading_args(4);
-  shading_args.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 2, GL_FLOAT},
+  gl::Program program;
+  program.Load("../shader/shading_vertex.glsl",
+                       gl::kVertexShader);
+  program.Load("../shader/shading_fragment.glsl",
+                       gl::kFragmentShader);
+  program.ReplaceMacro("LIGHT_COUNT", ss.str(), gl::kFragmentShader);
+  program.Build();
+  gl::Uniforms uniforms;
+  uniforms.GetLocation(program.id(), "lights", gl::kVector3f);
+  uniforms.GetLocation(program.id(), "light_power", gl::kFloat);
+  uniforms.GetLocation(program.id(), "light_color", gl::kVector3f);
+  gl::Args args(4);
+  args.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 2, GL_FLOAT},
                           model.uvs().size(), model.uvs().data());
-  shading_args.BindBuffer(1, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
+  args.BindBuffer(1, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
                           model.positions().size(), model.positions().data());
-  shading_args.BindBuffer(2, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
+  args.BindBuffer(2, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
                           model.normals().size(), model.normals().data());
-  shading_args.BindBuffer(3, {GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int),
+  args.BindBuffer(3, {GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int),
                               1, GL_UNSIGNED_INT},
                           model.indices().size(), model.indices().data());
+  gl::FrameBuffer fbo_shaded_texture(GL_RGB, texture.width(), texture.height());
 
   /// divided by 2 depends on Resolution: refactor it later
-  window.Resize(texture.width(), texture.height());
+  fbo_shaded_texture.Bind();
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glUseProgram(program.id());
   texture.Bind(0);
-  glUseProgram(shading_program.id());
-
-  shading_uniforms.Bind("lights",
-                        lights.data(),
-                        lights.size());
-  shading_uniforms.Bind("light_power", &light_power, 1);
-  shading_uniforms.Bind("light_color", &light_color, 1);
-  glBindVertexArray(shading_args.vao());
+  uniforms.Bind("lights", lights.data(), lights.size());
+  uniforms.Bind("light_power", &light_power, 1);
+  uniforms.Bind("light_color", &light_color, 1);
+  glBindVertexArray(args.vao());
   glDrawElements(GL_TRIANGLES, model.indices().size(), GL_UNSIGNED_INT, 0);
   glBindVertexArray(0);
 
   window.swap_buffer();
-  cv::Mat pixel = window.CaptureRGB();
-
-  cv::imwrite("shaded-texture.png", pixel);
+  cv::imwrite("shaded-texture.png", fbo_shaded_texture.Capture());
   return 0;
 }

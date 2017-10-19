@@ -19,6 +19,7 @@ namespace gl {
 class Window {
 public:
   Window(std::string window_name, int width, int height);
+  void Bind();
 
   /// GLFW operations
   void swap_buffer() {

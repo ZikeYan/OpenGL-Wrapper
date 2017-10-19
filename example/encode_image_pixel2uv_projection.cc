@@ -25,14 +25,13 @@ static const GLfloat kVertices[] = {
 };
 
 int main() {
-  gl::Model model;
-  model.LoadObj("../model/beethoven/beethoven.obj");
-
   // Context and control init
   gl::Window window("Beethoven", kWindowWidth, kWindowHeight);
   gl::Camera camera(window.width(), window.height());
   camera.SwitchInteraction(true);
 
+  gl::Model model;
+  model.LoadObj("../model/beethoven/beethoven.obj");
   gl::Texture input_texture;
   input_texture.Init("../model/beethoven/beethoven.png");
 
@@ -71,17 +70,13 @@ int main() {
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS);
 
-  cv::Mat pixel = cv::Mat(fbo_uv.texture().height(),
-                          fbo_uv.texture().width(),
-                          CV_32FC4);
-
   do {
     camera.UpdateView(window);
     glm::mat4 mvp = camera.mvp();
     glm::mat4 view = camera.view();
 
     // Pass 1:
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo_uv.fbo());
+    fbo_uv.Bind();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(program1.id());
     input_texture.Bind(0);
@@ -91,7 +86,7 @@ int main() {
     glBindVertexArray(0);
 
     // Pass 2:
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    window.Bind();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(program2.id());
     fbo_uv.texture().Bind(0);
@@ -101,9 +96,7 @@ int main() {
     glBindVertexArray(0);
 
     if (window.get_key(GLFW_KEY_ENTER)) {
-      glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, pixel.data);
-      cv::flip(pixel, pixel, 0);
-      EncodePixelToUV("map.txt", pixel);
+      EncodePixelToUV("map.txt", fbo_uv.Capture());
     }
 
     window.swap_buffer();

@@ -76,12 +76,14 @@ void Window::Resize(int width, int height) {
   depth_ = cv::Mat(img_height_, img_width_, CV_32F);
 }
 
-cv::Mat Window::CaptureRGB() {
-  int width, height;
+void Window::Bind() {
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+  glViewport(0, 0, img_width_, img_height_);
+}
 
+cv::Mat Window::CaptureRGB() {
   glReadPixels(0, 0, img_width_, img_height_,
                GL_BGR, GL_UNSIGNED_BYTE, rgb_.data);
-
   cv::Mat ret;
   cv::flip(rgb_, ret, 0);
 

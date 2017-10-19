@@ -25,6 +25,14 @@
 /// Wrap for light sources
 /// Show axis and light sources
 std::string kConfigPath = "../example/synthesize_srid_dataset";
+static const GLfloat kVertices[] = {
+    -1.0f, -1.0f, 0.0f,
+    1.0f, -1.0f, 0.0f,
+    -1.0f,  1.0f, 0.0f,
+    -1.0f,  1.0f, 0.0f,
+    1.0f, -1.0f, 0.0f,
+    1.0f,  1.0f, 0.0f,
+};
 
 int main() {
   /// Config loader
@@ -57,6 +65,7 @@ int main() {
   gl::Camera camera(window.width(), window.height());
   camera.SwitchInteraction(true);
 
+  /// Load torus
   gl::Model model;
   model.LoadObj(config_loader.input_model_path);
   gl::Texture input_texture;
@@ -69,106 +78,89 @@ int main() {
 
   ////////////////////////////////////
   /// Prepare for writing uv coordinates into texture
-  gl::Program texture_writer_program;
-  texture_writer_program.Load("../shader/pixel_uv_fbo_vertex.glsl",
-                              gl::kVertexShader);
-  texture_writer_program.Load("../shader/pixel_uv_fbo_fragment.glsl",
-                              gl::kFragmentShader);
-  texture_writer_program.Build();
-  gl::Uniforms texture_writer_uniforms;
-  texture_writer_uniforms.GetLocation(texture_writer_program.id(),
-                                      "mvp", gl::kMatrix4f);
-  gl::Args texture_writer_args(3);
-  texture_writer_args.BindBuffer(0,
-                                 {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
-                                 model.positions().size(),
-                                 model.positions().data());
-  texture_writer_args.BindBuffer(1,
-                                 {GL_ARRAY_BUFFER, sizeof(float), 2, GL_FLOAT},
-                                 model.uvs().size(), model.uvs().data());
-  texture_writer_args.BindBuffer(2,
-                                 {GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int),
-                                  1, GL_UNSIGNED_INT},
-                                 model.indices().size(),
-                                 model.indices().data());
-
-  // Not encapsulated now: set context for writing to renderbuffer
-  // Create framebuffer
-  GLuint frame_buffer = 0;
-  glGenFramebuffers(1, &frame_buffer);
-  glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
-  // Color -> texture, to output
-  gl::Texture write_texture;
-  write_texture.Init(GL_RGBA32F, image_width, image_height);
-  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                       write_texture.id(), 0);
-
-  // Depth -> render buffer, for depth test
-  GLuint render_buffer;
-  glGenRenderbuffers(1, &render_buffer);
-  glBindRenderbuffer(GL_RENDERBUFFER, render_buffer);
-  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
-                        write_texture.width(), write_texture.height());
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                            GL_RENDERBUFFER, render_buffer);
-  // Set the list of draw buffers.
-  GLenum draw_buffers[1] = {GL_COLOR_ATTACHMENT0};
-  glDrawBuffers(1, draw_buffers);
-  // Always check that our framebuffer is ok
-  if (glCheckFramebufferStatus(GL_FRAMEBUFFER)
-      != GL_FRAMEBUFFER_COMPLETE)
-    return -1;
-  ////////////////////////////////////
+  gl::Program program0;
+  program0.Load("../shader/pixel_uv_fbo_vertex.glsl", gl::kVertexShader);
+  program0.Load("../shader/pixel_uv_fbo_fragment.glsl", gl::kFragmentShader);
+  program0.Build();
+  gl::Uniforms uniforms0;
+  uniforms0.GetLocation(program0.id(), "mvp", gl::kMatrix4f);
+  gl::Args args0(3);
+  args0.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
+                     model.positions().size(),
+                     model.positions().data());
+  args0.BindBuffer(1, {GL_ARRAY_BUFFER, sizeof(float), 2, GL_FLOAT},
+                     model.uvs().size(),
+                     model.uvs().data());
+  args0.BindBuffer(2, {GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int),
+                         1, GL_UNSIGNED_INT},
+                     model.indices().size(),
+                     model.indices().data());
+  gl::FrameBuffer fbo_uv(GL_RGBA32F, image_width, image_height);
 
   ////////////////////////////////////
   /// Render the model (synthetic or reconstructed)
-  gl::Program render_program;
-  render_program.Load("../shader/textured_model_multi_light_vertex.glsl",
+  gl::Program program1;
+  program1.Load("../shader/textured_model_multi_light_vertex.glsl",
                       gl::kVertexShader);
-  render_program.ReplaceMacro("LIGHT_COUNT", ss.str(), gl::kVertexShader);
-  render_program.Load("../shader/textured_model_multi_light_fragment.glsl",
+  program1.ReplaceMacro("LIGHT_COUNT", ss.str(), gl::kVertexShader);
+  program1.Load("../shader/textured_model_multi_light_fragment.glsl",
                       gl::kFragmentShader);
-  render_program.ReplaceMacro("LIGHT_COUNT", ss.str(), gl::kFragmentShader);
-  render_program.Build();
-
-  gl::Uniforms render_uniforms;
-  render_uniforms.GetLocation(render_program.id(), "mvp", gl::kMatrix4f);
-  render_uniforms.GetLocation(render_program.id(), "c_T_w", gl::kMatrix4f);
-  render_uniforms.GetLocation(render_program.id(), "texture_sampler",
+  program1.ReplaceMacro("LIGHT_COUNT", ss.str(), gl::kFragmentShader);
+  program1.Build();
+  gl::Uniforms uniforms1;
+  uniforms1.GetLocation(program1.id(), "mvp", gl::kMatrix4f);
+  uniforms1.GetLocation(program1.id(), "c_T_w", gl::kMatrix4f);
+  uniforms1.GetLocation(program1.id(), "texture_sampler",
                               gl::kTexture2D);
-  render_uniforms.GetLocation(render_program.id(), "light", gl::kVector3f);
-  render_uniforms.GetLocation(render_program.id(), "light_cnt", gl::kInt);
-  render_uniforms.GetLocation(render_program.id(), "light_power", gl::kFloat);
-  render_uniforms.GetLocation(render_program.id(), "light_color",
+  uniforms1.GetLocation(program1.id(), "light", gl::kVector3f);
+  uniforms1.GetLocation(program1.id(), "light_cnt", gl::kInt);
+  uniforms1.GetLocation(program1.id(), "light_power", gl::kFloat);
+  uniforms1.GetLocation(program1.id(), "light_color",
                               gl::kVector3f);
+  gl::Args args1(4);
+  args1.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
+                   model.positions().size(),
+                   model.positions().data());
+  args1.BindBuffer(1, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
+                   model.normals().size(),
+                   model.normals().data());
+  args1.BindBuffer(2, {GL_ARRAY_BUFFER, sizeof(float), 2, GL_FLOAT},
+                   model.uvs().size(),
+                   model.uvs().data());
+  args1.BindBuffer(3, {GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int),
+                       1, GL_UNSIGNED_INT},
+                   model.indices().size(),
+                   model.indices().data());
+  gl::FrameBuffer fbo_image(GL_RGB, image_width, image_height);
 
-  gl::Args render_args(4);
-  render_args.InitBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
-                         model.positions().size());
-  render_args.InitBuffer(1, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
-                         model.normals().size());
-  render_args.InitBuffer(2, {GL_ARRAY_BUFFER, sizeof(float), 2, GL_FLOAT},
-                         model.uvs().size());
-  render_args.InitBuffer(3, {GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int),
-                             1, GL_UNSIGNED_INT},
-                         model.indices().size());
+  gl::Program program2;
+  program2.Load("../shader/simple_texture_vertex.glsl", gl::kVertexShader);
+  program2.Load("../shader/simple_texture_fragment.glsl", gl::kFragmentShader);
+  program2.Build();
+  gl::Uniforms uniforms2;
+  uniforms2.GetLocation(program2.id(), "tex", gl::kTexture2D);
+  gl::Args args2(2);
+  args2.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
+                   6, (void*)kVertices);
+  args2.BindBuffer(1, {GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int),
+                       1, GL_UNSIGNED_INT},
+                   model.indices().size(), model.indices().data());
 
   ////////////////////////////////
   /// Assistance: draw light sources and axises
-  gl::Program primitive_program;
-  primitive_program.Load("../shader/primitive_vertex.glsl", gl::kVertexShader);
-  primitive_program.Load("../shader/primitive_fragment.glsl",
-                         gl::kFragmentShader);
-  primitive_program.Build();
-
-  gl::Uniforms primitive_uniforms;
-  primitive_uniforms.GetLocation(primitive_program.id(), "mvp", gl::kMatrix4f);
-
-  gl::Args light_src_args(2);
-  light_src_args.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
-                            light_positions.size(), light_positions.data());
-  light_src_args.BindBuffer(1, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
-                            light_colors.size(), light_colors.data());
+  gl::Program programx;
+  programx.Load("../shader/primitive_vertex.glsl", gl::kVertexShader);
+  programx.Load("../shader/primitive_fragment.glsl", gl::kFragmentShader);
+  programx.Build();
+  gl::Uniforms uniformsx;
+  uniformsx.GetLocation(programx.id(), "mvp", gl::kMatrix4f);
+  gl::Args args_lights(2);
+  args_lights.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
+                   light_positions.size(),
+                   light_positions.data());
+  args_lights.BindBuffer(1, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
+                   light_colors.size(),
+                   light_colors.data());
   std::vector<glm::vec3> axises = {
       glm::vec3(-20, 0, 0), glm::vec3(20, 0, 0),
       glm::vec3(0, -20, 0), glm::vec3(0, 20, 0),
@@ -179,10 +171,10 @@ int main() {
       glm::vec3(0, 1, 0), glm::vec3(0, 1, 0),
       glm::vec3(0, 0, 1), glm::vec3(0, 0, 1)
   };
-  gl::Args axis_args(2);
-  axis_args.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
+  gl::Args args_axis(2);
+  args_axis.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
                        axises.size(), axises.data());
-  axis_args.BindBuffer(1, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
+  args_axis.BindBuffer(1, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
                        axis_colors.size(), axis_colors.data());
 
   // Additional settings
@@ -191,135 +183,114 @@ int main() {
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS);
 
-  // Buffer to collect written texture
-  cv::Mat pixel2uv = cv::Mat(write_texture.height(),
-                             write_texture.width(),
-                             CV_32FC4);
-  std::chrono::time_point<std::chrono::system_clock> prev_hit, curr_hit;
-  prev_hit = std::chrono::system_clock::now();
-
   int i = 0;
   do {
     if (i >= camera_positions.size()) break;
-    // Control
+
     if (!config_loader.use_preset_path) {
       camera.UpdateView(window);
     } else {
-      camera.set_view(
-          glm::lookAt(camera_positions[i],
+      camera.set_view(glm::lookAt(camera_positions[i],
                       glm::vec3(0, 0, 0),
                       glm::vec3(0, 0, 1)));
       ++i;
     }
+
     glm::mat4 mvp = camera.mvp();
     glm::mat4 view = camera.view();
 
-    // Pass 1:
-    // Render to framebuffer, into texture
-    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
+    // Pass 1:'
+    fbo_uv.Bind();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    /// Choose shader
-    glUseProgram(texture_writer_program.id());
+    glUseProgram(program0.id());
     input_texture.Bind(0);
-    texture_writer_uniforms.Bind("mvp", &mvp, 1);
-    glBindVertexArray(texture_writer_args.vao());
+    uniforms0.Bind("mvp", &mvp, 1);
+    glBindVertexArray(args0.vao());
     glDrawElements(GL_TRIANGLES, model.indices().size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 
     // Pass 2:
-    // Render the scene for visualization
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    fbo_image.Bind();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glUseProgram(render_program.id());
+    glUseProgram(program1.id());
     input_texture.Bind(0);
-    render_uniforms.Bind("mvp", &mvp, 1);
-    render_uniforms.Bind("c_T_w", &view, 1);
-    render_uniforms.Bind("texture_sampler", GLuint(0));
-    render_uniforms.Bind("light", light_positions.data(), light_cnt);
-    render_uniforms.Bind("light_cnt", &light_cnt, 1);
-    render_uniforms.Bind("light_power", &light_power, 1);
-    render_uniforms.Bind("light_color", &light_color, 1);
-
-    /// Bind vertex data
-    glBindVertexArray(render_args.vao());
-    render_args.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
-                           model.positions().size(), model.positions().data());
-    render_args.BindBuffer(1, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
-                           model.normals().size(), model.normals().data());
-    render_args.BindBuffer(2, {GL_ARRAY_BUFFER, sizeof(float), 2, GL_FLOAT},
-                           model.uvs().size(), model.uvs().data());
-    render_args.BindBuffer(3, {GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int),
-                               1, GL_UNSIGNED_INT},
-                           model.indices().size(), model.indices().data());
-
-    /// Render
+    uniforms1.Bind("mvp", &mvp, 1);
+    uniforms1.Bind("c_T_w", &view, 1);
+    uniforms1.Bind("texture_sampler", GLuint(0));
+    uniforms1.Bind("light", light_positions.data(), light_cnt);
+    uniforms1.Bind("light_cnt", &light_cnt, 1);
+    uniforms1.Bind("light_power", &light_power, 1);
+    uniforms1.Bind("light_color", &light_color, 1);
+    glBindVertexArray(args1.vao());
     glDrawElements(GL_TRIANGLES, model.indices().size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 
     if (config_loader.show_light_sources) {
-      glUseProgram(primitive_program.id());
-      primitive_uniforms.Bind("mvp", &mvp, 1);
-      glBindVertexArray(axis_args.vao());
+      window.Bind();
+      glUseProgram(programx.id());
+      uniformsx.Bind("mvp", &mvp, 1);
+      glBindVertexArray(args_axis.vao());
       glDrawArrays(GL_LINES, 0, axises.size());
       glBindVertexArray(0);
 
-      glBindVertexArray(light_src_args.vao());
+      glBindVertexArray(args_lights.vao());
       glEnable(GL_PROGRAM_POINT_SIZE);
       glDrawArrays(GL_POINTS, 0, light_positions.size());
       glBindVertexArray(0);
     }
 
+    window.Bind();
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glUseProgram(program2.id());
+    fbo_image.texture().Bind(1);
+    uniforms2.Bind("tex", GLuint(1));
+    glBindVertexArray(args2.vao());
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+
     /// Capture the texture
     if (config_loader.use_preset_path) {
-      /// Write texture (i.e. projection map)
-      write_texture.Bind(0);
-      glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, pixel2uv.data);
-      cv::flip(pixel2uv, pixel2uv, 0);
-
-      /// Write image
       std::stringstream ss;
       ss.str("");
       ss << "_factor_" << config_loader.downsample_factor
          << "_radius_" << camera_polars[i].x
          << "_elevation_" << camera_polars[i].y
          << "_azimuth_" << camera_polars[i].z;
-      cv::imwrite(config_loader.output_path + "/image" + ss.str() + ".png",
-                  window.CaptureRGB());
       EncodePixelToUV(config_loader.output_path + "/map" + ss.str() + ".txt",
-                      pixel2uv);
+                      fbo_uv.Capture());
+      cv::imwrite(config_loader.output_path + "/image" + ss.str() + ".png",
+                  fbo_image.Capture());
     } else if (window.get_key(GLFW_KEY_ENTER) == GLFW_PRESS) {
-      cv::imwrite(config_loader.output_path + "/lights_config.png",
-                  window.CaptureRGB());
+      cv::imwrite("lights_config.png", fbo_image.Capture());
     }
     window.swap_buffer();
   } while( window.get_key(GLFW_KEY_ESCAPE) != GLFW_PRESS &&
            window.should_close() == 0 );
 
-  ////////////////////////////////////
-  /// Finally output shaded texture
-  gl::Program shading_program;
-  shading_program.Load("../shader/shading_vertex.glsl", gl::kVertexShader);
-  shading_program.Load("../shader/shading_fragment.glsl", gl::kFragmentShader);
-  shading_program.ReplaceMacro("LIGHT_COUNT", ss.str(), gl::kFragmentShader);
-  shading_program.Build();
+  gl::Program program_shading;
+  program_shading.Load("../shader/shading_vertex.glsl",
+                       gl::kVertexShader);
+  program_shading.Load("../shader/shading_fragment.glsl",
+                       gl::kFragmentShader);
+  program_shading.ReplaceMacro("LIGHT_COUNT", ss.str(), gl::kFragmentShader);
+  program_shading.Build();
 
-  gl::Uniforms shading_uniforms;
-  shading_uniforms.GetLocation(shading_program.id(), "lights", gl::kVector3f);
-  shading_uniforms.GetLocation(shading_program.id(), "light_power", gl::kFloat);
-  shading_uniforms.GetLocation(shading_program.id(), "light_color", gl::kVector3f);
+  gl::Uniforms uniforms_shading;
+  uniforms_shading.GetLocation(program_shading.id(), "lights", gl::kVector3f);
+  uniforms_shading.GetLocation(program_shading.id(), "light_power", gl::kFloat);
+  uniforms_shading.GetLocation(program_shading.id(), "light_color", gl::kVector3f);
 
-  gl::Args shading_args(4);
-  shading_args.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 2, GL_FLOAT},
+  gl::Args args_shading(4);
+  args_shading.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 2, GL_FLOAT},
                           model.uvs().size(), model.uvs().data());
-  shading_args.BindBuffer(1, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
+  args_shading.BindBuffer(1, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
                           model.positions().size(), model.positions().data());
-  shading_args.BindBuffer(2, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
+  args_shading.BindBuffer(2, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
                           model.normals().size(), model.normals().data());
-  shading_args.BindBuffer(3, {GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int),
+  args_shading.BindBuffer(3, {GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int),
                               1, GL_UNSIGNED_INT},
                           model.indices().size(), model.indices().data());
+
 
   /// divided by 2 depends on Resolution: refactor it later
   int window_width = input_texture.width();
@@ -328,32 +299,30 @@ int main() {
   window_width /= 2;
   window_height /= 2;
 #endif
+  gl::FrameBuffer fbo_shading(GL_RGB, window_width, window_height);
   window.Resize(window_width, window_height);
 
-  glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+  fbo_shading.Bind();
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   input_texture.Bind(0);
-  glUseProgram(shading_program.id());
+  glUseProgram(program_shading.id());
 
-  shading_uniforms.Bind("lights",
+  uniforms_shading.Bind("lights",
                         light_positions.data(),
                         light_positions.size());
-  shading_uniforms.Bind("light_power", &light_power, 1);
-  shading_uniforms.Bind("light_color", &light_color, 1);
-  glBindVertexArray(shading_args.vao());
+  uniforms_shading.Bind("light_power", &light_power, 1);
+  uniforms_shading.Bind("light_color", &light_color, 1);
+  glBindVertexArray(args_shading.vao());
   glDrawElements(GL_TRIANGLES, model.indices().size(), GL_UNSIGNED_INT, 0);
   glBindVertexArray(0);
 
   window.swap_buffer();
-  cv::Mat shading = window.CaptureRGB();
-  cv::imshow("test", shading);
-  cv::waitKey(-1);
 
   ss.str("");
   ss << config_loader.output_path + "/atlas_shading"
      << "_factor_" << config_loader.downsample_factor
      << ".png";
+  cv::Mat &shading = fbo_shading.Capture();
   cv::imwrite(ss.str(), shading);
 
   cv::Mat albedo;

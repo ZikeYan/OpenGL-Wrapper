@@ -1,4 +1,4 @@
-for viewpoint = 5 : 5
+for viewpoint = 86 : 86
     %fid = fopen(sprintf('../bin/map_factor_1_radius_0_elevation_4_azimuth_0.txt'));
     fid = fopen(sprintf('../bin/map_%d.txt', viewpoint-1));
     c = textscan(fid, '%d %d %f %f');

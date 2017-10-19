@@ -39,9 +39,6 @@ static const GLfloat kVertices[] = {
 };
 
 int main() {
-  gl::Model model;
-  model.LoadObj("../model/face/face.obj");
-
   // Context and control init
   gl::Window window("Face", kWindowWidth, kWindowHeight);
   gl::Camera camera(window.width(), window.height());
@@ -56,6 +53,8 @@ int main() {
     T = model_mat * glm::transpose(T) * model_mat;
   }
 
+  gl::Model model;
+  model.LoadObj("../model/face/face.obj");
   gl::Texture input_texture;
   input_texture.Init("../model/face/face.png");
 
@@ -92,7 +91,7 @@ int main() {
   args1.BindBuffer(2, {GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int),
                        1, GL_UNSIGNED_INT},
                    model.indices().size(), model.indices().data());
-  gl::FrameBuffer fbo_image(GL_RGBA, kTextureWidth, kTextureHeight);
+  gl::FrameBuffer fbo_image(GL_RGB, kTextureWidth, kTextureHeight);
 
   /// 2: render texture->window
   gl::Program program2;
@@ -111,16 +110,8 @@ int main() {
   // Additional settings
   glfwPollEvents();
   glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-  // Enable depth example
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS);
-
-  cv::Mat image_mat = cv::Mat(fbo_image.texture().height(),
-                              fbo_image.texture().width(),
-                              CV_8UC4);
-  cv::Mat uv_mat = cv::Mat(fbo_uv.texture().height(),
-                           fbo_uv.texture().width(),
-                           CV_32FC4);
 
   for (int i = 0; i < traj.poses().size(); ++i) {
     std::cout << i << " / " << traj.poses().size() << std::endl;
@@ -130,8 +121,7 @@ int main() {
     camera.UpdateView(window);
 
     // Pass 0:
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo_uv.fbo());
-    glViewport(0, 0, kTextureWidth * 2, kTextureHeight * 2);
+    fbo_uv.Bind();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(program0.id());
     uniforms0.Bind("mvp", &mvp, 1);
@@ -140,17 +130,12 @@ int main() {
     glBindVertexArray(0);
 
     // Write uv map
-    fbo_uv.texture().Bind(0);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, uv_mat.data);
-    cv::flip(uv_mat, uv_mat, 0);
-    std::stringstream ss;
-    ss.str("");
+    std::stringstream ss("");
     ss << "map_" << i << ".txt";
-    EncodePixelToUV(ss.str(), uv_mat);
+    EncodePixelToUV(ss.str(), fbo_uv.Capture());
 
     // Pass 1:
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo_image.fbo());
-    glViewport(0, 0, kTextureWidth * 2, kTextureHeight * 2);
+    fbo_image.Bind();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(program1.id());
     input_texture.Bind(0);
@@ -161,16 +146,12 @@ int main() {
     glBindVertexArray(0);
 
     // Write image
-    fbo_uv.texture().Bind(1);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_BGRA, GL_UNSIGNED_BYTE, image_mat.data);
-    cv::flip(image_mat, image_mat, 0);
     ss.str("");
     ss << "pixel_" << i << ".png";
-    cv::imwrite(ss.str(), image_mat);
+    cv::imwrite(ss.str(), fbo_image.Capture());
 
     // Pass 2: simple rendering
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, kWindowWidth * 2, kWindowHeight * 2); // 2x retina
+    window.Bind();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(program2.id());
     glActiveTexture(GL_TEXTURE1);

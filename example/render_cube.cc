@@ -53,17 +53,17 @@ static GLubyte vIndices[] = {
 
 int main() {
   gl::Window window("Cube", 640, 480);
-
   gl::Camera camera(window.width(), window.height());
   camera.SwitchInteraction(true);
-  gl::Program program;
-  program.Load("../shader/cube_vertex.glsl", gl::kVertexShader);
-  program.Load("../shader/cube_fragment.glsl", gl::kFragmentShader);
-  program.Build();
 
+  gl::Program program;
+  program.Load("../shader/cube_vertex.glsl",
+               gl::kVertexShader);
+  program.Load("../shader/cube_fragment.glsl",
+               gl::kFragmentShader);
+  program.Build();
   gl::Uniforms uniforms;
   uniforms.GetLocation(program.id(), "mvp", gl::kMatrix4f);
-
   gl::Args args(3);
   args.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
                   sizeof(vCoordinates) / sizeof(vCoordinates[0]),

@@ -10,7 +10,7 @@
 #include <vector>
 #include <opencv2/opencv.hpp>
 
-void EncodePixelToUV(std::string path, cv::Mat pixel2uv) {
+void EncodePixelToUV(std::string path, cv::Mat& pixel2uv) {
   std::fstream out(path, std::ios::out);
   for (int i = 0; i < pixel2uv.rows; ++i) {
     for (int j = 0; j < pixel2uv.cols; ++j) {
