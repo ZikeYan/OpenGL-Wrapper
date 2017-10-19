@@ -37,13 +37,27 @@ int main() {
   camera.set_intrinsic("../model/face/face-intrinsic.txt");
   camera.SwitchInteraction(false);
 
+  gl::Program program0;
+  program0.Load("../shader/encode_pixel_uv_vertex.glsl", gl::kVertexShader);
+  program0.Load("../shader/encode_pixel_uv_fragment.glsl", gl::kFragmentShader);
+  program0.Build();
+  gl::Uniforms uniforms0;
+  uniforms0.GetLocation(program0.id(), "mvp", gl::kMatrix4f);
+  gl::Args args0(3);
+  args0.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
+                   model.positions().size(), model.positions().data());
+  args0.BindBuffer(1, {GL_ARRAY_BUFFER, sizeof(float), 2, GL_FLOAT},
+                   model.uvs().size(), model.uvs().data());
+  args0.BindBuffer(2, {GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int),
+                       1, GL_UNSIGNED_INT},
+                   model.indices().size(), model.indices().data());
+
+  gl::Texture read_texture;
+  read_texture.Init("../model/face/face.png");
   gl::Program program1;
   program1.Load("../shader/render_to_fbo_vertex.glsl", gl::kVertexShader);
   program1.Load("../shader/render_to_fbo_fragment.glsl", gl::kFragmentShader);
   program1.Build();
-
-  gl::Texture read_texture;
-  read_texture.Init("../model/face/face.png");
   gl::Uniforms uniforms1;
   uniforms1.GetLocation(program1.id(), "mvp", gl::kMatrix4f);
   uniforms1.GetLocation(program1.id(), "tex", gl::kTexture2D);
@@ -60,7 +74,6 @@ int main() {
   program2.Load("../shader/simple_texture_vertex.glsl", gl::kVertexShader);
   program2.Load("../shader/simple_texture_fragment.glsl", gl::kFragmentShader);
   program2.Build();
-
   gl::Uniforms uniforms2;
   uniforms2.GetLocation(program2.id(), "tex", gl::kTexture2D);
   gl::Args args2(2);
@@ -73,22 +86,40 @@ int main() {
   ////////////////////////////////////
   // Not encapsulated now
   // Create framebuffer
-  GLuint frame_buffer = 0;
-  glGenFramebuffers(1, &frame_buffer);
-  glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
+  GLuint frame_buffer_image = 0;
+  glGenFramebuffers(1, &frame_buffer_image);
+  glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_image);
   // Color -> texture, to output
-  gl::Texture write_texture;
-  write_texture.Init(GL_RGBA, kTextureWidth, kTextureHeight);
+  gl::Texture image_texture;
+  image_texture.Init(GL_RGBA, kTextureWidth, kTextureHeight);
   glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                       write_texture.id(), 0);
+                       image_texture.id(), 0);
   // Depth -> render buffer, for depth example
-  GLuint render_buffer;
-  glGenRenderbuffers(1, &render_buffer);
-  glBindRenderbuffer(GL_RENDERBUFFER, render_buffer);
+  GLuint render_buffer_texture;
+  glGenRenderbuffers(1, &render_buffer_texture);
+  glBindRenderbuffer(GL_RENDERBUFFER, render_buffer_texture);
   glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
-                        write_texture.width(), write_texture.height());
+                        image_texture.width(), image_texture.height());
   glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                            GL_RENDERBUFFER, render_buffer);
+                            GL_RENDERBUFFER, render_buffer_texture);
+
+  GLuint frame_buffer_uv = 0;
+  glGenFramebuffers(1, &frame_buffer_uv);
+  glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_uv);
+  // Color -> texture, to output
+  gl::Texture uv_texture;
+  uv_texture.Init(GL_RGBA32F, kTextureWidth, kTextureHeight);
+  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                       uv_texture.id(), 0);
+  // Depth -> render buffer, for depth test
+  GLuint render_buffer_uv;
+  glGenRenderbuffers(1, &render_buffer_uv);
+  glBindRenderbuffer(GL_RENDERBUFFER, render_buffer_uv);
+  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
+                        uv_texture.width(), uv_texture.height());
+  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+                            GL_RENDERBUFFER, render_buffer_uv);
+
   // Set the list of draw buffers.
   GLenum draw_buffers[1] = {GL_COLOR_ATTACHMENT0};
   glDrawBuffers(1, draw_buffers);
@@ -115,20 +146,52 @@ int main() {
     T = model_mat * glm::transpose(T) * model_mat;
   }
 
-  cv::Mat pixel = cv::Mat(write_texture.height(),
-                          write_texture.width(),
+  cv::Mat image_mat = cv::Mat(image_texture.height(),
+                          image_texture.width(),
                           CV_8UC4);
+  cv::Mat uv_mat = cv::Mat(uv_texture.height(),
+                           uv_texture.width(),
+                           CV_32FC4);
 
-  for (int i = 0; i < traj.poses().size(); ++i) {
+  for (int i = 0; i < 2; ++i) {
     std::cout << i << " / " << traj.poses().size() << std::endl;
     glm::mat4 mvp = camera.projection() * traj.poses()[i] * camera.model();
 
     // Control
     camera.UpdateView(window);
 
+    // Pass 0:
+    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_uv);
+    glViewport(0, 0, kTextureWidth*2, kTextureHeight*2);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    /// Choose shader
+    glUseProgram(program0.id());
+    uniforms0.Bind("mvp", &mvp, 1);
+    glBindVertexArray(args0.vao());
+    glDrawElements(GL_TRIANGLES, model.indices().size(), GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+    uv_texture.Bind(0);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, uv_mat.data);
+    cv::flip(uv_mat, uv_mat, 0);
+
+    std::stringstream ss;
+    ss.str("");
+    ss << "map_" << i << ".txt";
+    std::ofstream out(ss.str());
+    for (int i = 0; i < uv_mat.rows; ++i) {
+      for (int j = 0; j < uv_mat.cols; ++j) {
+        cv::Vec4f v = uv_mat.at<cv::Vec4f>(i, j);
+        if (v[0] != 0 || v[1] != 0) {
+          out << i << " " << j << " "
+              << v[0] << " " << v[1] << std::endl;
+        }
+      }
+    }
+
     // Pass 1:
     // Render to framebuffer, into depth texture
-    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_image);
     glViewport(0, 0, kTextureWidth*2, kTextureHeight*2); // retina
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -141,6 +204,15 @@ int main() {
     glDrawElements(GL_TRIANGLES, model.indices().size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, image_texture.id());
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_BGRA, GL_UNSIGNED_BYTE, image_mat.data);
+    cv::flip(image_mat, image_mat, 0);
+
+    ss.str("");
+    ss << "pixel_" << i << ".png";
+    cv::imwrite(ss.str(), image_mat);
+
     // Pass 2:
     // Test rendering texture
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -148,18 +220,11 @@ int main() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(program2.id());
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, write_texture.id());
+    glBindTexture(GL_TEXTURE_2D, image_texture.id());
     uniforms2.Bind("tex", GLuint(1));
     glBindVertexArray(args2.vao());
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
-
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_BGRA, GL_UNSIGNED_BYTE, pixel.data);
-    cv::flip(pixel, pixel, 0);
-    std::stringstream ss;
-    ss.str("");
-    ss << "pixel_" << i << ".png";
-    cv::imwrite(ss.str(), pixel);
 
     window.swap_buffer();
   }

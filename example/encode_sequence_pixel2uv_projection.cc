@@ -159,7 +159,6 @@ int main() {
 
     /// Choose shader
     glUseProgram(texture_writer_program.id());
-    input_texture.Bind(0);
     texture_writer_uniforms.Bind("mvp", &mvp, 1);
     glBindVertexArray(texture_writer_args.vao());
     glDrawElements(GL_TRIANGLES, model.indices().size(), GL_UNSIGNED_INT, 0);
