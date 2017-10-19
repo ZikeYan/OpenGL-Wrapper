@@ -8,6 +8,9 @@
 /// Output: rendered image(.png)
 ///         pixel-wise texture coordinate map(.txt)
 ///         => further interpreted by MATLAB
+//
+// Created by Neo on 24/08/2017.
+//
 
 #include <fstream>
 
@@ -16,50 +19,39 @@
 #include <glm/glm.hpp>
 
 #include <opencv2/opencv.hpp>
+#include "glwrapper.h"
+#include "encode_pixel2uv.h"
 
-#include "../src/program.h"
-#include "../src/uniforms.h"
-#include "../src/camera.h"
-#include "../src/trajectory.h"
-#include "../src/window.h"
-#include "../src/texture.h"
-#include "../src/args.h"
-#include "../src/model.h"
-
+// Actual window size: 1280x960
 int kWindowWidth = 640;
 int kWindowHeight= 480;
 
 int kTextureWidth = 1280;
 int kTextureHeight = 960;
 
-/// Wrap for light sources
-/// Show axis and light sources
+static const GLfloat kVertices[] = {
+    -1.0f, -1.0f, 0.0f,
+    1.0f, -1.0f, 0.0f,
+    -1.0f,  1.0f, 0.0f,
+    -1.0f,  1.0f, 0.0f,
+    1.0f, -1.0f, 0.0f,
+    1.0f,  1.0f, 0.0f,
+};
+
 int main() {
-  //////////////////////////////////
-  /// Load data at the first stage
   gl::Model model;
   model.LoadObj("../model/face/face.obj");
 
-  /// Context and control init
-  gl::Window window("Projection mapping", kWindowWidth, kWindowHeight);
-
+  // Context and control init
+  gl::Window window("Face", kWindowWidth, kWindowHeight);
   gl::Camera camera(window.width(), window.height());
   camera.set_intrinsic("../model/face/face-intrinsic.txt");
   camera.SwitchInteraction(false);
-
+  gl::Trajectory traj;
+  traj.Load("../model/face/face-extrinsic.txt");
   glm::mat4 model_mat = glm::mat4(1.0);
   model_mat[1][1] = model_mat[2][2] = -1;
   camera.set_model(model_mat);
-
-  gl::Trajectory traj;
-  traj.Load("../model/face/face-extrinsic.txt");
-  /// Convert to OpenGL coordinate system
-  /// x1' = T1 x1
-  /// x2' = T2 x2
-  /// x2 = 2M1 x1
-  /// x2' = 2M1 x1'
-  /// => 2M1 (T1 x1) = T2 (2M1 x1)
-  /// => T2 =  2M1 T1 2M1.inv()
   for (auto& T : traj.poses()) {
     T = model_mat * glm::transpose(T) * model_mat;
   }
@@ -67,153 +59,130 @@ int main() {
   gl::Texture input_texture;
   input_texture.Init("../model/face/face.png");
 
-  ////////////////////////////////////
-  /// Prepare for writing uv coordinates into texture
-  gl::Program texture_writer_program;
-  texture_writer_program.Load("../shader/encode_pixel_uv_vertex.glsl",
-                              gl::kVertexShader);
-  texture_writer_program.Load("../shader/encode_pixel_uv_fragment.glsl",
-                              gl::kFragmentShader);
-  texture_writer_program.Build();
-  gl::Uniforms texture_writer_uniforms;
-  texture_writer_uniforms.GetLocation(texture_writer_program.id(),
-                                      "mvp", gl::kMatrix4f);
-  gl::Args texture_writer_args(3);
-  texture_writer_args.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
-                                 model.positions().size(), model.positions().data());
-  texture_writer_args.BindBuffer(1, {GL_ARRAY_BUFFER, sizeof(float), 2, GL_FLOAT},
-                                 model.uvs().size(), model.uvs().data());
-  texture_writer_args.BindBuffer(2, {GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int),
-                                     1, GL_UNSIGNED_INT},
-                                 model.indices().size(), model.indices().data());
+  /// 0: uv coordinate->texture to encode projection matrix
+  gl::Program program0;
+  program0.Load("../shader/pixel_uv_fbo_vertex.glsl", gl::kVertexShader);
+  program0.Load("../shader/pixel_uv_fbo_fragment.glsl", gl::kFragmentShader);
+  program0.Build();
+  gl::Uniforms uniforms0;
+  uniforms0.GetLocation(program0.id(), "mvp", gl::kMatrix4f);
+  gl::Args args0(3);
+  args0.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
+                   model.positions().size(), model.positions().data());
+  args0.BindBuffer(1, {GL_ARRAY_BUFFER, sizeof(float), 2, GL_FLOAT},
+                   model.uvs().size(), model.uvs().data());
+  args0.BindBuffer(2, {GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int),
+                       1, GL_UNSIGNED_INT},
+                   model.indices().size(), model.indices().data());
+  gl::FrameBuffer fbo_uv(GL_RGBA32F, kTextureWidth, kTextureHeight);
 
-  // Not encapsulated now: set context for writing to renderbuffer
-  // Create framebuffer
-  GLuint frame_buffer = 0;
-  glGenFramebuffers(1, &frame_buffer);
-  glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
-  // Color -> texture, to output
-  gl::Texture write_texture;
-  write_texture.Init(GL_RGBA32F, kTextureWidth, kTextureHeight);
-  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                       write_texture.id(), 0);
-  // Depth -> render buffer, for depth test
-  GLuint render_buffer;
-  glGenRenderbuffers(1, &render_buffer);
-  glBindRenderbuffer(GL_RENDERBUFFER, render_buffer);
-  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
-                        write_texture.width(), write_texture.height());
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                            GL_RENDERBUFFER, render_buffer);
-  // Set the list of draw buffers.
-  GLenum draw_buffers[1] = {GL_COLOR_ATTACHMENT0};
-  glDrawBuffers(1, draw_buffers);
-  // Always check that our framebuffer is ok
-  if(glCheckFramebufferStatus(GL_FRAMEBUFFER)
-     != GL_FRAMEBUFFER_COMPLETE)
-    return -1;
-  ////////////////////////////////////
+  /// 1: high-resolution image->texture
+  gl::Program program1;
+  program1.Load("../shader/textured_model_fbo_vertex.glsl", gl::kVertexShader);
+  program1.Load("../shader/textured_model_fbo_fragment.glsl", gl::kFragmentShader);
+  program1.Build();
+  gl::Uniforms uniforms1;
+  uniforms1.GetLocation(program1.id(), "mvp", gl::kMatrix4f);
+  uniforms1.GetLocation(program1.id(), "tex", gl::kTexture2D);
+  gl::Args args1(3);
+  args1.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
+                   model.positions().size(), model.positions().data());
+  args1.BindBuffer(1, {GL_ARRAY_BUFFER, sizeof(float), 2, GL_FLOAT},
+                   model.uvs().size(), model.uvs().data());
+  args1.BindBuffer(2, {GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int),
+                       1, GL_UNSIGNED_INT},
+                   model.indices().size(), model.indices().data());
+  gl::FrameBuffer fbo_image(GL_RGBA, kTextureWidth, kTextureHeight);
 
-  ////////////////////////////////////
-  /// Render the model
-  gl::Program render_program;
-  render_program.Load("../shader/simple_model_vertex.glsl",
-                      gl::kVertexShader);
-  render_program.Load("../shader/simple_model_fragment.glsl",
-                      gl::kFragmentShader);
-  render_program.Build();
-
-  gl::Uniforms render_uniforms;
-  render_uniforms.GetLocation(render_program.id(), "mvp", gl::kMatrix4f);
-  render_uniforms.GetLocation(render_program.id(), "texture_sampler", gl::kTexture2D);
-
-  gl::Args render_args(3);
-  render_args.InitBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
-                         model.positions().size());
-  render_args.InitBuffer(1, {GL_ARRAY_BUFFER, sizeof(float), 2, GL_FLOAT},
-                         model.uvs().size());
-  render_args.InitBuffer(2, {GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int),
-                             1, GL_UNSIGNED_INT},
-                         model.indices().size());
+  /// 2: render texture->window
+  gl::Program program2;
+  program2.Load("../shader/simple_texture_vertex.glsl", gl::kVertexShader);
+  program2.Load("../shader/simple_texture_fragment.glsl", gl::kFragmentShader);
+  program2.Build();
+  gl::Uniforms uniforms2;
+  uniforms2.GetLocation(program2.id(), "tex", gl::kTexture2D);
+  gl::Args args2(2);
+  args2.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
+                   6, (void*)kVertices);
+  args2.BindBuffer(1, {GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int),
+                       1, GL_UNSIGNED_INT},
+                   model.indices().size(), model.indices().data());
 
   // Additional settings
   glfwPollEvents();
   glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+  // Enable depth example
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS);
 
-  // Buffer to collect written texture
-  cv::Mat pixel = cv::Mat(write_texture.height(),
-                          write_texture.width(),
-                          CV_32FC4);
+  cv::Mat image_mat = cv::Mat(fbo_image.texture().height(),
+                              fbo_image.texture().width(),
+                              CV_8UC4);
+  cv::Mat uv_mat = cv::Mat(fbo_uv.texture().height(),
+                           fbo_uv.texture().width(),
+                           CV_32FC4);
 
   for (int i = 0; i < traj.poses().size(); ++i) {
     std::cout << i << " / " << traj.poses().size() << std::endl;
     glm::mat4 mvp = camera.projection() * traj.poses()[i] * camera.model();
 
-    // Pass 1:
-    // Render to framebuffer, into texture
-    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer);
-    glViewport(0, 0, kTextureWidth*2, kTextureHeight*2);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    // Control
+    camera.UpdateView(window);
 
-    /// Choose shader
-    glUseProgram(texture_writer_program.id());
-    texture_writer_uniforms.Bind("mvp", &mvp, 1);
-    glBindVertexArray(texture_writer_args.vao());
+    // Pass 0:
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo_uv.fbo());
+    glViewport(0, 0, kTextureWidth * 2, kTextureHeight * 2);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glUseProgram(program0.id());
+    uniforms0.Bind("mvp", &mvp, 1);
+    glBindVertexArray(args0.vao());
     glDrawElements(GL_TRIANGLES, model.indices().size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 
-    // Pass 2:
-    // Render the scene for visualization
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, kWindowWidth*2, kWindowHeight*2);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glUseProgram(render_program.id());
-    input_texture.Bind(0);
-    render_uniforms.Bind("mvp", &mvp, 1);
-    render_uniforms.Bind("texture_sampler", GLuint(0));
-
-    /// Bind vertex data
-    glBindVertexArray(render_args.vao());
-    render_args.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
-                           model.positions().size(), model.positions().data());
-    render_args.BindBuffer(1, {GL_ARRAY_BUFFER, sizeof(float), 2, GL_FLOAT},
-                           model.uvs().size(), model.uvs().data());
-    render_args.BindBuffer(2, {GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int),
-                               1, GL_UNSIGNED_INT},
-                           model.indices().size(), model.indices().data());
-
-    /// Render
-    glDrawElements(GL_TRIANGLES, model.indices().size(), GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);
-
-    /// Output: rendered image
-    ///         coordinate map (x y -> tex uv)
-    write_texture.Bind(0);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, pixel.data);
-    cv::flip(pixel, pixel, 0);
-
+    // Write uv map
+    fbo_uv.texture().Bind(0);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, uv_mat.data);
+    cv::flip(uv_mat, uv_mat, 0);
     std::stringstream ss;
     ss.str("");
     ss << "map_" << i << ".txt";
-    std::ofstream out(ss.str());
-    for (int i = 0; i < pixel.rows; ++i) {
-      for (int j = 0; j < pixel.cols; ++j) {
-        cv::Vec4f v = pixel.at<cv::Vec4f>(i, j);
-        if (v[0] != 0 || v[1] != 0) {
-          out << i << " " << j << " "
-              << v[0] << " " << v[1] << std::endl;
-        }
-      }
-    }
-    window.swap_buffer();
+    EncodePixelToUV(ss.str(), uv_mat);
 
-    if (window.get_key(GLFW_KEY_ESCAPE) == GLFW_PRESS) break;
+    // Pass 1:
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo_image.fbo());
+    glViewport(0, 0, kTextureWidth * 2, kTextureHeight * 2);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glUseProgram(program1.id());
+    input_texture.Bind(0);
+    uniforms1.Bind("mvp", &mvp, 1);
+    uniforms1.Bind("tex", GLuint(0));
+    glBindVertexArray(args1.vao());
+    glDrawElements(GL_TRIANGLES, model.indices().size(), GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+
+    // Write image
+    fbo_uv.texture().Bind(1);
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_BGRA, GL_UNSIGNED_BYTE, image_mat.data);
+    cv::flip(image_mat, image_mat, 0);
+    ss.str("");
+    ss << "pixel_" << i << ".png";
+    cv::imwrite(ss.str(), image_mat);
+
+    // Pass 2: simple rendering
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, kWindowWidth * 2, kWindowHeight * 2); // 2x retina
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glUseProgram(program2.id());
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, fbo_image.texture().id());
+    uniforms2.Bind("tex", GLuint(1));
+    glBindVertexArray(args2.vao());
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+
+    window.swap_buffer();
   }
 
   glfwTerminate();
-
   return 0;
 }

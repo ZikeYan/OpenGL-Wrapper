@@ -10,6 +10,7 @@
 
 #include <opencv2/opencv.hpp>
 #include "glwrapper.h"
+#include "encode_pixel2uv.h"
 
 // Actual window size: 1280x960
 int kWindowWidth = 640;
@@ -29,34 +30,18 @@ static const GLfloat kVertices[] = {
 
 int main() {
   gl::Model model;
-  model.LoadObj("../model/face/face.obj");
+  model.LoadObj("../model/f16/f16.obj");
 
   // Context and control init
-  gl::Window window("F-16", kWindowWidth, kWindowHeight);
+  gl::Window window("F16", kWindowWidth, kWindowHeight);
   gl::Camera camera(window.width(), window.height());
-  camera.set_intrinsic("../model/face/face-intrinsic.txt");
-  camera.SwitchInteraction(false);
+  camera.SwitchInteraction(true);
 
-  gl::Program program0;
-  program0.Load("../shader/encode_pixel_uv_vertex.glsl", gl::kVertexShader);
-  program0.Load("../shader/encode_pixel_uv_fragment.glsl", gl::kFragmentShader);
-  program0.Build();
-  gl::Uniforms uniforms0;
-  uniforms0.GetLocation(program0.id(), "mvp", gl::kMatrix4f);
-  gl::Args args0(3);
-  args0.BindBuffer(0, {GL_ARRAY_BUFFER, sizeof(float), 3, GL_FLOAT},
-                   model.positions().size(), model.positions().data());
-  args0.BindBuffer(1, {GL_ARRAY_BUFFER, sizeof(float), 2, GL_FLOAT},
-                   model.uvs().size(), model.uvs().data());
-  args0.BindBuffer(2, {GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int),
-                       1, GL_UNSIGNED_INT},
-                   model.indices().size(), model.indices().data());
-
-  gl::Texture read_texture;
-  read_texture.Init("../model/face/face.png");
+  gl::Texture input_texture;
+  input_texture.Init("../model/f16/f16-1024.png");
   gl::Program program1;
-  program1.Load("../shader/render_to_fbo_vertex.glsl", gl::kVertexShader);
-  program1.Load("../shader/render_to_fbo_fragment.glsl", gl::kFragmentShader);
+  program1.Load("../shader/textured_model_fbo_vertex.glsl", gl::kVertexShader);
+  program1.Load("../shader/textured_model_fbo_fragment.glsl", gl::kFragmentShader);
   program1.Build();
   gl::Uniforms uniforms1;
   uniforms1.GetLocation(program1.id(), "mvp", gl::kMatrix4f);
@@ -69,6 +54,7 @@ int main() {
   args1.BindBuffer(2, {GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int),
                        1, GL_UNSIGNED_INT},
                    model.indices().size(), model.indices().data());
+  gl::FrameBuffer fbo_image(GL_RGBA, kTextureWidth, kTextureHeight);
 
   gl::Program program2;
   program2.Load("../shader/simple_texture_vertex.glsl", gl::kVertexShader);
@@ -83,121 +69,27 @@ int main() {
                        1, GL_UNSIGNED_INT},
                    model.indices().size(), model.indices().data());
 
-  ////////////////////////////////////
-  // Not encapsulated now
-  // Create framebuffer
-  GLuint frame_buffer_image = 0;
-  glGenFramebuffers(1, &frame_buffer_image);
-  glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_image);
-  // Color -> texture, to output
-  gl::Texture image_texture;
-  image_texture.Init(GL_RGBA, kTextureWidth, kTextureHeight);
-  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                       image_texture.id(), 0);
-  // Depth -> render buffer, for depth example
-  GLuint render_buffer_texture;
-  glGenRenderbuffers(1, &render_buffer_texture);
-  glBindRenderbuffer(GL_RENDERBUFFER, render_buffer_texture);
-  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
-                        image_texture.width(), image_texture.height());
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                            GL_RENDERBUFFER, render_buffer_texture);
-
-  GLuint frame_buffer_uv = 0;
-  glGenFramebuffers(1, &frame_buffer_uv);
-  glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_uv);
-  // Color -> texture, to output
-  gl::Texture uv_texture;
-  uv_texture.Init(GL_RGBA32F, kTextureWidth, kTextureHeight);
-  glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                       uv_texture.id(), 0);
-  // Depth -> render buffer, for depth test
-  GLuint render_buffer_uv;
-  glGenRenderbuffers(1, &render_buffer_uv);
-  glBindRenderbuffer(GL_RENDERBUFFER, render_buffer_uv);
-  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
-                        uv_texture.width(), uv_texture.height());
-  glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                            GL_RENDERBUFFER, render_buffer_uv);
-
-  // Set the list of draw buffers.
-  GLenum draw_buffers[1] = {GL_COLOR_ATTACHMENT0};
-  glDrawBuffers(1, draw_buffers);
-  // Always check that our framebuffer is ok
-  if(glCheckFramebufferStatus(GL_FRAMEBUFFER)
-     != GL_FRAMEBUFFER_COMPLETE)
-    return -1;
-  ////////////////////////////////////
-
-  // Additional settings
   glfwPollEvents();
-
   glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-  // Enable depth example
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS);
 
-  gl::Trajectory traj;
-  traj.Load("../model/face/face-extrinsic.txt");
-  glm::mat4 model_mat = glm::mat4(1.0);
-  model_mat[1][1] = model_mat[2][2] = -1;
-  camera.set_model(model_mat);
-  for (auto& T : traj.poses()) {
-    T = model_mat * glm::transpose(T) * model_mat;
-  }
-
-  cv::Mat image_mat = cv::Mat(image_texture.height(),
-                          image_texture.width(),
-                          CV_8UC4);
-  cv::Mat uv_mat = cv::Mat(uv_texture.height(),
-                           uv_texture.width(),
-                           CV_32FC4);
-
-  for (int i = 0; i < 2; ++i) {
-    std::cout << i << " / " << traj.poses().size() << std::endl;
-    glm::mat4 mvp = camera.projection() * traj.poses()[i] * camera.model();
-
-    // Control
+  cv::Mat image_mat = cv::Mat(fbo_image.texture().height(),
+                              fbo_image.texture().width(),
+                              CV_8UC4);
+  do {
     camera.UpdateView(window);
-
-    // Pass 0:
-    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_uv);
-    glViewport(0, 0, kTextureWidth*2, kTextureHeight*2);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    /// Choose shader
-    glUseProgram(program0.id());
-    uniforms0.Bind("mvp", &mvp, 1);
-    glBindVertexArray(args0.vao());
-    glDrawElements(GL_TRIANGLES, model.indices().size(), GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);
-    uv_texture.Bind(0);
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, uv_mat.data);
-    cv::flip(uv_mat, uv_mat, 0);
-
-    std::stringstream ss;
-    ss.str("");
-    ss << "map_" << i << ".txt";
-    std::ofstream out(ss.str());
-    for (int i = 0; i < uv_mat.rows; ++i) {
-      for (int j = 0; j < uv_mat.cols; ++j) {
-        cv::Vec4f v = uv_mat.at<cv::Vec4f>(i, j);
-        if (v[0] != 0 || v[1] != 0) {
-          out << i << " " << j << " "
-              << v[0] << " " << v[1] << std::endl;
-        }
-      }
-    }
+    glm::mat4 mvp = camera.mvp();
 
     // Pass 1:
     // Render to framebuffer, into depth texture
-    glBindFramebuffer(GL_FRAMEBUFFER, frame_buffer_image);
-    glViewport(0, 0, kTextureWidth*2, kTextureHeight*2); // retina
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo_image.fbo());
+    glViewport(0, 0, kTextureWidth * 2, kTextureHeight * 2); // retina
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     /// Choose shader
     glUseProgram(program1.id());
-    read_texture.Bind(0);
+    input_texture.Bind(0);
     uniforms1.Bind("mvp", &mvp, 1);
     uniforms1.Bind("tex", GLuint(0));
     glBindVertexArray(args1.vao());
@@ -205,36 +97,29 @@ int main() {
     glBindVertexArray(0);
 
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, image_texture.id());
-    glGetTexImage(GL_TEXTURE_2D, 0, GL_BGRA, GL_UNSIGNED_BYTE, image_mat.data);
-    cv::flip(image_mat, image_mat, 0);
-
-    ss.str("");
-    ss << "pixel_" << i << ".png";
-    cv::imwrite(ss.str(), image_mat);
+    glBindTexture(GL_TEXTURE_2D, fbo_image.texture().id());
+    if (window.get_key(GLFW_KEY_END) == GLFW_PRESS) {
+      glGetTexImage(GL_TEXTURE_2D, 0, GL_BGRA, GL_UNSIGNED_BYTE, image_mat.data);
+      cv::flip(image_mat, image_mat, 0);
+      cv::imwrite("texture.png", image_mat);
+    }
 
     // Pass 2:
     // Test rendering texture
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, kWindowWidth*2, kWindowHeight*2); // 2x retina
+    glViewport(0, 0, kWindowWidth * 2, kWindowHeight * 2); // 2x retina
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(program2.id());
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, image_texture.id());
+    glBindTexture(GL_TEXTURE_2D, fbo_image.texture().id());
     uniforms2.Bind("tex", GLuint(1));
     glBindVertexArray(args2.vao());
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
 
     window.swap_buffer();
-  }
-
-
-  // Close OpenGL window and terminate GLFW
-//  cv::resize(pixel, pixel, cv::Size(pixel.cols/2, pixel.rows/2));
-//  cv::imshow("pixel", pixel);
-//  cv::waitKey(-1);
-
+  } while( window.get_key(GLFW_KEY_ESCAPE) != GLFW_PRESS &&
+           window.should_close() == 0 );
 
   glfwTerminate();
   return 0;

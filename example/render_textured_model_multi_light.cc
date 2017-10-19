@@ -81,7 +81,7 @@ int main() {
   texture.Load("../model/beethoven/beethoven.png");
 
   // Context and control init
-  gl::Window window("F16", kWindowWidth, kWindowHeight);
+  gl::Window window("Beethoven", kWindowWidth, kWindowHeight);
   gl::Camera camera(window.width(), window.height());
   camera.SwitchInteraction(true);
 
@@ -184,12 +184,6 @@ int main() {
     window.swap_buffer();
   } while( window.get_key(GLFW_KEY_ESCAPE ) != GLFW_PRESS &&
            window.should_close() == 0 );
-
-//  if (capture.rows > 0) {
-//    cv::Mat depths = camera.ConvertDepthBuffer(capture, 5000);
-//    cv::imshow("depth", depths);
-//    cv::waitKey(-1);
-//  }
 
   // Close OpenGL window and terminate GLFW
   glfwTerminate();

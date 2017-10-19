@@ -52,6 +52,11 @@ void Texture::Init(GLint internal_format,
     case GL_RGBA32F:
       output_format = GL_RGBA;
       type = GL_FLOAT;
+      break;
+    case GL_RGB:
+      output_format = GL_RGB;
+      type = GL_UNSIGNED_BYTE;
+      break;
     default:
       output_format = GL_RGB;
       type = GL_UNSIGNED_BYTE;

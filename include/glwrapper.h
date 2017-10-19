@@ -13,5 +13,6 @@
 #include "../src/trajectory.h"
 #include "../src/uniforms.h"
 #include "../src/window.h"
+#include "../src/framebuffer.h"
 
 #endif //OPENGL_SNIPPET_GLWRAPPER_H

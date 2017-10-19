@@ -16,7 +16,7 @@ SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 SET(OPENGL_WRAPPER_LIBRARIES "")
 SET(OPENGL_WRAPPER_SOURCES
         src/window.cc
-        src/frame_buffer.cc
+        src/framebuffer.cc
         src/program.cc
         src/args.cc
         src/model.cc

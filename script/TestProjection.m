@@ -1,4 +1,4 @@
-for viewpoint = 1 : 1
+for viewpoint = 5 : 5
     %fid = fopen(sprintf('../bin/map_factor_1_radius_0_elevation_4_azimuth_0.txt'));
     fid = fopen(sprintf('../bin/map_%d.txt', viewpoint-1));
     c = textscan(fid, '%d %d %f %f');
@@ -27,20 +27,20 @@ for viewpoint = 1 : 1
     %im_ren = imread('bin/im_render.png');
     im_matlab = im2uint8(Vec2Mat(w_img, h_img, 3, v_gen));
     im_gl     = imread(sprintf('../bin/pixel_%d.png', viewpoint-1));
-    %im_real   = imread(sprintf('../../data/Face/Frame000/Image%d.png', viewpoint));
+    im_real   = imread(sprintf('../../../../data/Face/Frame000/Image%d.png', viewpoint));
 
     figure(1);
     subplot(1, 3, 1);
     imshow(im_matlab);
     title('matlab');
 
-    subplot(2, 3, 2);
+    subplot(1, 3, 2);
     imshow(im_gl);
     title('gl');
 
-    %subplot(1, 3, 2);
-    %imshow(im_real);
-    %title('real');
+    subplot(1, 3, 3);
+    imshow(im_real);
+    title('real');
 
     %subplot(1, 3, 3);
     %imshow(10*abs(im_matlab - im_gl));
