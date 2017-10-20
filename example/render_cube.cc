@@ -53,7 +53,7 @@ static GLubyte vIndices[] = {
 
 int main() {
   gl::Window window("Cube", 640, 480);
-  gl::Camera camera(window.width(), window.height());
+  gl::Camera camera(window.visual_width(), window.visual_height());
   camera.SwitchInteraction(true);
 
   gl::Program program;

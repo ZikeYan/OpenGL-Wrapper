@@ -56,10 +56,14 @@ void Args::InitBuffer(GLuint i,
                arg_attrib.size * arg_attrib.count * max_size,
                NULL,
                GL_STATIC_DRAW);
-#ifdef USE_CUDA
+
   if (use_cuda_) {
+#ifdef USE_CUDA
     checkCudaErrors(cudaGraphicsGLRegisterBuffer(
         &cuda_res_[i], vbos_[i], cudaGraphicsMapFlagsNone));
+#else
+    std::cout << "CUDA unsupported!\n";
+    exit(1);
   }
 #endif
 
@@ -91,6 +95,9 @@ void Args::BindBuffer(GLuint i,
                                arg_attrib.size * arg_attrib.count * size,
                                cudaMemcpyDeviceToDevice));
     checkCudaErrors(cudaGraphicsUnmapResources(1, &cuda_res_[i], NULL));
+#else
+    std::cout << "CUDA unsupported!\n";
+    exit(1);
 #endif
   } else {
     glBufferData(arg_attrib.buffer,

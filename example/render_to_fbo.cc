@@ -11,13 +11,13 @@
 #include <opencv2/opencv.hpp>
 #include "glwrapper.h"
 #include "encode_pixel2uv.h"
+/// Pixel-unit
+int kWindowWidth = 1280;
+int kWindowHeight= 960;
 
-// Actual window size: 1280x960
-int kWindowWidth = 640;
-int kWindowHeight= 480;
-
-int kTextureWidth = 1280;
-int kTextureHeight = 960;
+/// Pixel-unit
+int kTextureWidth = 2560;
+int kTextureHeight = 1920;
 
 static const GLfloat kVertices[] = {
     -1.0f, -1.0f, 0.0f,
@@ -27,11 +27,12 @@ static const GLfloat kVertices[] = {
     1.0f, -1.0f, 0.0f,
     1.0f,  1.0f, 0.0f,
 };
+bool kUnitVisual = false; // -> kUnitPixel
 
 int main() {
   // Context and control init
-  gl::Window window("F16", kWindowWidth, kWindowHeight);
-  gl::Camera camera(window.width(), window.height());
+  gl::Window window("F16", kWindowWidth, kWindowHeight, kUnitVisual);
+  gl::Camera camera(window.visual_width(), window.visual_height());
   camera.SwitchInteraction(true);
   gl::Model model;
   model.LoadObj("../model/f16/f16.obj");
@@ -55,7 +56,7 @@ int main() {
   args1.BindBuffer(2, {GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int),
                        1, GL_UNSIGNED_INT},
                    model.indices().size(), model.indices().data());
-  gl::FrameBuffer fbo_image(GL_RGBA, kTextureWidth, kTextureHeight);
+  gl::FrameBuffer fbo_image(GL_RGBA, kTextureWidth, kTextureHeight, kUnitVisual);
 
   gl::Program program2;
   program2.Load("../shader/simple_texture_vertex.glsl",

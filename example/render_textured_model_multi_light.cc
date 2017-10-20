@@ -19,6 +19,7 @@
 
 const int kWindowWidth  = 1280;
 const int kWindowHeight = 960;
+const bool kUnitVisual = false;
 
 int main() {
   std::vector<glm::vec3> light_src_positions = {
@@ -76,7 +77,7 @@ int main() {
 
   // Context and control init
   gl::Window window("Beethoven", kWindowWidth, kWindowHeight);
-  gl::Camera camera(window.width(), window.height());
+  gl::Camera camera(window.visual_width(), window.visual_height());
   camera.SwitchInteraction(true);
   gl::Model model;
   model.LoadObj("../model/beethoven/beethoven.obj");

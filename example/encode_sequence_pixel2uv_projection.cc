@@ -26,8 +26,10 @@
 int kWindowWidth = 640;
 int kWindowHeight= 480;
 
-int kTextureWidth = 1280;
-int kTextureHeight = 960;
+int kTextureWidth = 2560;
+int kTextureHeight = 1920;
+
+bool kUnitVisual = false; // pixel unit above
 
 static const GLfloat kVertices[] = {
     -1.0f, -1.0f, 0.0f,
@@ -41,7 +43,7 @@ static const GLfloat kVertices[] = {
 int main() {
   // Context and control init
   gl::Window window("Face", kWindowWidth, kWindowHeight);
-  gl::Camera camera(window.width(), window.height());
+  gl::Camera camera(window.visual_width(), window.visual_height());
   camera.set_intrinsic("../model/face/face-intrinsic.txt");
   camera.SwitchInteraction(false);
   gl::Trajectory traj;
@@ -113,6 +115,7 @@ int main() {
   glEnable(GL_DEPTH_TEST);
   glDepthFunc(GL_LESS);
 
+  system("mkdir face");
   for (int i = 0; i < traj.poses().size(); ++i) {
     std::cout << i << " / " << traj.poses().size() << std::endl;
     glm::mat4 mvp = camera.projection() * traj.poses()[i] * camera.model();
@@ -131,7 +134,7 @@ int main() {
 
     // Write uv map
     std::stringstream ss("");
-    ss << "map_" << i << ".txt";
+    ss << "face/map_" << i << ".txt";
     EncodePixelToUV(ss.str(), fbo_uv.Capture());
 
     // Pass 1:
@@ -147,7 +150,7 @@ int main() {
 
     // Write image
     ss.str("");
-    ss << "pixel_" << i << ".png";
+    ss << "face/image_" << i << ".png";
     cv::imwrite(ss.str(), fbo_image.Capture());
 
     // Pass 2: simple rendering

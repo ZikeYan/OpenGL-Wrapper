@@ -37,14 +37,18 @@ void Texture::Init(cv::Mat& texture) {
   ConfigTexture();
 }
 
+/// Specifically used in Framebuffer
 void Texture::Init(GLint internal_format,
-                   int width, int height) {
-  int factor = 1;
+                   int width, int height,
+                   bool unit_visual) {
+  width_ = width;
+  height_ = height;
 #ifdef __APPLE__
-  factor = 2;
+  if (unit_visual) {
+    width_ *= 2;
+    height_ *= 2;
+  }
 #endif
-  width_ = width * factor;
-  height_ = height * factor;
 
   // TODO: complete the switch table
   GLenum output_format, type;

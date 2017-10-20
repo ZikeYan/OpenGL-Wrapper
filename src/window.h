@@ -18,7 +18,13 @@
 namespace gl {
 class Window {
 public:
-  Window(std::string window_name, int width, int height);
+  // If you want a 1024x768 window,
+  // 1. LOOK like 1024x768,      => unit_visual = true
+  // 2. STORE PIXELS in 1024x768 => unit_visual = false,
+  //    it would look like 512x384 on macOS
+  // !unit_visual => unit_pixel
+  Window(std::string window_name, int width, int height,
+         bool unit_visual = false);
   void Bind();
 
   /// GLFW operations
@@ -34,26 +40,34 @@ public:
   }
 
   /// Properties
-  const int width() const {
-    return width_;
+  const int visual_width() const {
+    return visual_width_;
   }
-  const int height() const {
-    return height_;
+  const int visual_height() const {
+    return visual_height_;
   }
-  void Resize(int width, int height);
+  const int pixel_width() const {
+    return pixel_width_;
+  }
+  const int pixel_height() const {
+    return pixel_height_;
+  }
+  void Resize(int width, int height,
+              bool unit_visual = false);
 
-  /// Screenshot utilities
+  /// Screenshot utilities. A temporary solution.
+  /// To take screenshots reliably, render to a fbo and use fbo.Capture().
   cv::Mat CaptureRGB();
   cv::Mat CaptureRGBA();
   cv::Mat CaptureDepth();
 
 private:
   GLFWwindow *window_;
-  int width_;
-  int height_;
+  int visual_width_;
+  int visual_height_;
+  int pixel_width_;
+  int pixel_height_;
 
-  int img_width_;
-  int img_height_;
   cv::Mat rgb_;
   cv::Mat rgba_;
   cv::Mat depth_;

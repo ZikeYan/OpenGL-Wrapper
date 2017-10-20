@@ -24,8 +24,10 @@ public:
   void Init(cv::Mat& texture);
 
   /// Init for writing. Note differences in filtering
+  // !unit_visual => unit_pixel
   void Init(GLint internal_format,
-            int width, int height);
+            int width, int height,
+            bool unit_visual = false);
 
   void Bind(int texture_idx);
 
@@ -35,6 +37,7 @@ public:
   const GLuint id() const {
     return texture_id_;
   }
+  // pixel unit
   const int width() const {
     return width_;
   }

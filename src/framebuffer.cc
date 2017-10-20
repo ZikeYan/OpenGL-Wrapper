@@ -5,14 +5,21 @@
 #include "framebuffer.h"
 
 namespace gl {
-FrameBuffer::FrameBuffer(int internal_format, int width, int height) {
+FrameBuffer::FrameBuffer(int internal_format, int width, int height,
+                         bool unit_visual) {
   fbo_ = 0;
   glGenFramebuffers(1, &fbo_);
   glBindFramebuffer(GL_FRAMEBUFFER, fbo_);
 
-  width_ = width;
+  width_  = width;
   height_ = height;
-  texture_.Init(internal_format, width, height);
+#ifdef __APPLE__
+  if (! unit_visual) {
+    width_ /= 2;
+    height_ /= 2;
+  }
+#endif
+  texture_.Init(internal_format, width, height, unit_visual);
   glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                        texture_.id(), 0);
 

@@ -27,7 +27,6 @@ class Args {
 public:
   explicit
   Args(int argn, bool use_cuda = false);
-
   ~Args();
 
   const GLuint vao() const {

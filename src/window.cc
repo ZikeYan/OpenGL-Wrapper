@@ -7,8 +7,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace gl {
-/// If use macOS, open a 0.5x window
-Window::Window(std::string window_name, int width, int height) {
+Window::Window(std::string window_name, int width, int height,
+               bool unit_visual) {
   // Initialise GLFW
   if (!glfwInit()) {
     std::cerr << "Failed to initialize GLFW." << std::endl;
@@ -21,9 +21,21 @@ Window::Window(std::string window_name, int width, int height) {
   glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
   // Open a window and create its OpenGL context
-  width_ = width;
-  height_ = height;
-  window_ = glfwCreateWindow(width, height, window_name.c_str(), NULL, NULL);
+  pixel_width_  = visual_width_  = width;
+  pixel_height_ = visual_height_ = height;
+
+#ifdef __APPLE__
+  if (unit_visual) {
+    pixel_width_ *= 2;
+    pixel_height_ *= 2;
+  } else {
+    visual_width_ /= 2;
+    visual_height_ /= 2;
+  }
+#endif
+  window_ = glfwCreateWindow(visual_width_, visual_height_,
+                             window_name.c_str(),
+                             NULL, NULL);
   if (window_ == NULL) {
     std::cerr << "Failed to open GLFW window." << std::endl;
     glfwTerminate();
@@ -42,47 +54,39 @@ Window::Window(std::string window_name, int width, int height) {
     exit(1);
   }
 
-  int res_factor = 1;
-#ifdef __APPLE__
-  // Retina requires 2x
-  res_factor = 2;
-#endif
-  img_width_  = res_factor * width_;
-  img_height_ = res_factor * height_;
-  rgb_   = cv::Mat(img_height_, img_width_, CV_8UC3);
-  rgba_  = cv::Mat(img_height_, img_width_, CV_8UC4);
-  depth_ = cv::Mat(img_height_, img_width_, CV_32F);
+  rgb_   = cv::Mat(pixel_height_, pixel_width_, CV_8UC3);
+  rgba_  = cv::Mat(pixel_height_, pixel_width_, CV_8UC4);
+  depth_ = cv::Mat(pixel_height_, pixel_width_, CV_32F);
 }
 
-void Window::Resize(int width, int height) {
-  width_ = width;
-  height_ = height;
-  glfwSetWindowSize(window_, width, height);
-  /// There is a bug of GLFW here @ Linux
-  std::cout << width << " " << height << std::endl;
-  glfwPollEvents();
-  glfwGetWindowSize(window_, &width, &height);
-  std::cout << width << " !!! " << height << std::endl;
-
-  int res_factor = 1;
+void Window::Resize(int width, int height, bool unit_visual) {
+  pixel_width_ = visual_width_ = width;
+  pixel_height_ = visual_height_ = height;
 #ifdef __APPLE__
-  res_factor = 2;
+  if (unit_visual) {
+    pixel_width_ *= 2;
+    pixel_height_ *= 2;
+  } else {
+    visual_width_ /= 2;
+    visual_height_ /= 2;
+  }
 #endif
-  img_width_  = res_factor * width_;
-  img_height_ = res_factor * height_;
-  glViewport(0, 0, img_width_, img_height_);
-  rgb_   = cv::Mat(img_height_, img_width_, CV_8UC3);
-  rgba_  = cv::Mat(img_height_, img_width_, CV_8UC4);
-  depth_ = cv::Mat(img_height_, img_width_, CV_32F);
+  glfwSetWindowSize(window_, visual_width_, visual_height_);
+  glfwPollEvents();
+  glViewport(0, 0, pixel_width_, pixel_height_);
+
+  rgb_   = cv::Mat(pixel_height_, pixel_width_, CV_8UC3);
+  rgba_  = cv::Mat(pixel_height_, pixel_width_, CV_8UC4);
+  depth_ = cv::Mat(pixel_height_, pixel_width_, CV_32F);
 }
 
 void Window::Bind() {
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
-  glViewport(0, 0, img_width_, img_height_);
+  glViewport(0, 0, pixel_width_, pixel_height_);
 }
 
 cv::Mat Window::CaptureRGB() {
-  glReadPixels(0, 0, img_width_, img_height_,
+  glReadPixels(0, 0, pixel_width_, pixel_height_,
                GL_BGR, GL_UNSIGNED_BYTE, rgb_.data);
   cv::Mat ret;
   cv::flip(rgb_, ret, 0);
@@ -91,7 +95,7 @@ cv::Mat Window::CaptureRGB() {
 }
 
 cv::Mat Window::CaptureRGBA() {
-  glReadPixels(0, 0, img_width_, img_height_,
+  glReadPixels(0, 0, pixel_width_, pixel_height_,
                GL_BGRA, GL_UNSIGNED_BYTE, rgba_.data);
   cv::Mat ret;
   cv::flip(rgba_, ret, 0);
@@ -101,7 +105,7 @@ cv::Mat Window::CaptureRGBA() {
 
 cv::Mat Window::CaptureDepth() {
   glReadBuffer(GL_BACK);
-  glReadPixels(0, 0, img_width_, img_height_,
+  glReadPixels(0, 0, pixel_width_, pixel_height_,
                GL_DEPTH_COMPONENT, GL_FLOAT, depth_.data);
   cv::Mat ret;
   cv::flip(depth_, ret, 0);

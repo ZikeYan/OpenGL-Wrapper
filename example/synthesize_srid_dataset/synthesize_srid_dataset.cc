@@ -53,16 +53,13 @@ int main() {
   ss << light_positions.size();
 
   //////////////////////////////////
+  /// unit: pixel
   int image_width = config_loader.output_width_original
                     / config_loader.downsample_factor;
   int image_height = config_loader.output_height_original
                      / config_loader.downsample_factor;
-#ifdef __APPLE__
-  image_width /= 2;
-  image_height /= 2;
-#endif
   gl::Window window("Synthesizer", image_width, image_height);
-  gl::Camera camera(window.width(), window.height());
+  gl::Camera camera(window.visual_width(), window.visual_height());
   camera.SwitchInteraction(true);
 
   /// Load torus
@@ -291,14 +288,8 @@ int main() {
                               1, GL_UNSIGNED_INT},
                           model.indices().size(), model.indices().data());
 
-
-  /// divided by 2 depends on Resolution: refactor it later
   int window_width = input_texture.width();
   int window_height = input_texture.height();
-#ifdef __APPLE__
-  window_width /= 2;
-  window_height /= 2;
-#endif
   gl::FrameBuffer fbo_shading(GL_RGB, window_width, window_height);
   window.Resize(window_width, window_height);
 

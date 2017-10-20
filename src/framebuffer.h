@@ -6,16 +6,20 @@
 #define OPENGL_WRAPPER_FRAME_BUFFER_H
 
 #include <GL/glew.h>
-#include "texture.h"
 #include <opencv2/opencv.hpp>
+
+#include "texture.h"
 
 namespace gl {
 class FrameBuffer {
 public:
   FrameBuffer() = default;
-  FrameBuffer(int internal_type, int width, int height);
+  /// !unit_visual => unit_pixel
+  FrameBuffer(int internal_type, int width, int height,
+              bool unit_visual = false);
   void Bind();
 
+  // pixel unit
   int& height() {
     return height_;
   }
